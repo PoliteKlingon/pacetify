@@ -3,6 +3,7 @@ package com.example.myapplication.ui.dashboard
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.myapplication.databinding.FragmentDashboardBinding
 import com.example.myapplication.databinding.PlaylistBinding
 
 class PlaylistAdapter(
