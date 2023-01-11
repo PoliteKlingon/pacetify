@@ -1,20 +1,20 @@
 package com.example.myapplication.ui.dashboard
 
 import android.os.Bundle
-import android.text.Editable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.recyclerview.widget.RecyclerView.Adapter
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
+import com.example.myapplication.Playlist
+import com.example.myapplication.SRADao
+import com.example.myapplication.SRADatabase
 import com.example.myapplication.databinding.FragmentDashboardBinding
+import kotlinx.coroutines.launch
 
 class DashboardFragment : Fragment() {
 
@@ -40,12 +40,18 @@ class DashboardFragment : Fragment() {
             textView.text = it
         }*/
 
-        playlists = mutableListOf() //TODO: nacitani ze souboru
-        binding.tvNoPlaylists.setText(if (playlists.isEmpty()) "No playlists yet" else "") //TODO: vratit tam text kdyz vsechny vymaze
+        val dao = SRADatabase.getInstance(activity!!).SRADao
+
+        //playlists = mutableListOf() //TODO: nacitani ze souboru
+        lifecycleScope.launch {
+            playlists = dao.getPlaylists() as MutableList<Playlist>
+        }
+
+        binding.tvNoPlaylists.text = if (playlists.isEmpty()) "No playlists yet" else ""
 
         class PlaylistAdapterDataObserver: AdapterDataObserver() {
             override fun onChanged() {
-                binding.tvNoPlaylists.setText(if (playlists.isEmpty()) "No playlists yet" else "")
+                binding.tvNoPlaylists.text = if (playlists.isEmpty()) "No playlists yet" else ""
             }
         }
 
@@ -57,14 +63,23 @@ class DashboardFragment : Fragment() {
         binding.btnAddPlaylist.setOnClickListener {
             val name = binding.etNewPlaylistName.text.toString()
             val uri = binding.etNewPlaylistUri.text.toString()
-            if (name.isEmpty() || uri.isEmpty()) { //TODO: more checks?
-                Toast.makeText(activity, "Name and URL can not be empty", Toast.LENGTH_LONG).show()
-            } else {
-                playlists.add(Playlist(uri, name))
-                binding.tvNoPlaylists.setText("")
+
+            if (name.isEmpty())
+                Toast.makeText(activity, "Name can not be empty", Toast.LENGTH_LONG).show()
+            else if (uri.isEmpty())
+                Toast.makeText(activity, "URL can not be empty", Toast.LENGTH_LONG).show()
+            else if (playlists.map { p -> p.name } .contains(name))
+                Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
+            else {
+                val playlist = Playlist(uri, name)
+                playlists.add(playlist)
+                binding.tvNoPlaylists.text = ""
                 adapter.notifyItemInserted(playlists.size - 1)
                 binding.etNewPlaylistName.setText("")
                 binding.etNewPlaylistUri.setText("") //TODO: ulozeni do souboru
+                lifecycleScope.launch {
+                    dao.addPlaylist(playlist)
+                }
             }
         }
 
