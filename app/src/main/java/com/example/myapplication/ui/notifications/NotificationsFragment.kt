@@ -1,5 +1,6 @@
 package com.example.myapplication.ui.notifications
 
+import android.content.Context
 import android.hardware.SensorEventListener
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -36,16 +37,22 @@ class NotificationsFragment : Fragment() {
             textView.text = it
         }*/
 
-        binding.sbRest.progress = 1 //TODO: nacist nastaveni
-        binding.sbRest.isEnabled = true //TODO: nacist nastaveni
+        val sharedPref = activity!!.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val prefEditor = sharedPref.edit()
+
+        binding.swMotivate.isChecked = sharedPref.getBoolean("motivate", true)
+        binding.swRest.isChecked = sharedPref.getBoolean("rest", true)
+        binding.sbRest.progress = sharedPref.getInt("progress", 1)
         binding.sbRest.isEnabled = binding.swRest.isChecked
-        binding.tvRest.setText("Maximal resting time: " + ((binding.sbRest.progress + 1) * 10) + " s")
+        binding.tvRest.text = "Maximal resting time: " + ((binding.sbRest.progress + 1) * 10) + " s"
 
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val curRestTime = (progress + 1) * 10
-                binding.tvRest.setText("Maximal resting time: " + curRestTime + " s")
-                //TODO: ulozit nastaveni rest time
+                binding.tvRest.text = "Maximal resting time: $curRestTime s"
+
+                prefEditor.putInt("progress", progress)
+                prefEditor.apply()
             }
 
             override fun onStartTrackingTouch(p0: SeekBar?) {}
@@ -53,17 +60,14 @@ class NotificationsFragment : Fragment() {
             override fun onStopTrackingTouch(p0: SeekBar?) {}
         })
 
-        binding.swMotivate.isChecked = true
-        //TODO: nacist nastaveni
-
         binding.swMotivate.setOnClickListener {
-            //TODO: ulozit nastaveni
+            prefEditor.putBoolean("motivate", binding.swMotivate.isChecked)
+            prefEditor.apply()
         }
 
-        binding.swRest.isChecked = false //TODO: nacist nastaveni
-
         binding.swRest.setOnClickListener {
-            //TODO: ulozit nastaveni
+            prefEditor.putBoolean("rest", binding.swRest.isChecked)
+            prefEditor.apply()
             binding.sbRest.isEnabled = binding.swRest.isChecked
         }
 
