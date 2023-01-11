@@ -42,7 +42,7 @@ class DashboardFragment : Fragment() {
 
         val dao = SRADatabase.getInstance(activity!!).SRADao
 
-        playlists = mutableListOf() //TODO: nacitani ze souboru
+        playlists = mutableListOf()
 
         binding.tvNoPlaylists.text = if (playlists.isEmpty()) "No playlists yet" else ""
 
@@ -52,13 +52,13 @@ class DashboardFragment : Fragment() {
             }
         }
 
-        val adapter = PlaylistAdapter(playlists)
+        val adapter = PlaylistAdapter(playlists, dao, lifecycleScope)
         binding.rvPlaylists.adapter = adapter
         adapter.registerAdapterDataObserver(PlaylistAdapterDataObserver())
         binding.rvPlaylists.layoutManager = LinearLayoutManager(activity)
 
         lifecycleScope.launch {
-            playlists.addAll(dao.getPlaylists().toMutableList())
+            playlists.addAll(dao.getPlaylists())
             adapter.notifyDataSetChanged()
         }
 
@@ -78,7 +78,7 @@ class DashboardFragment : Fragment() {
                 binding.tvNoPlaylists.text = ""
                 adapter.notifyItemInserted(playlists.size - 1)
                 binding.etNewPlaylistName.setText("")
-                binding.etNewPlaylistUri.setText("") //TODO: ulozeni do souboru
+                binding.etNewPlaylistUri.setText("")
                 lifecycleScope.launch {
                     dao.addPlaylist(playlist)
                 }

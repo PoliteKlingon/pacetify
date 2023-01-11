@@ -1,7 +1,10 @@
 package com.example.myapplication.ui.home
 
 import android.Manifest
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -9,6 +12,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.os.Bundle
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
@@ -19,6 +23,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.myapplication.SRAService
 import com.example.myapplication.databinding.FragmentHomeBinding
 
 class HomeFragment : Fragment(), SensorEventListener {
@@ -39,6 +44,51 @@ class HomeFragment : Fragment(), SensorEventListener {
 
     lateinit var mainHandler: Handler
     private var seconds: Int = 0
+
+
+
+    private var sraService: SRAService? = null
+    private var serviceBound: Boolean = false
+
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as SRAService.SRABinder
+            sraService = binder.getService()
+            serviceBound = true
+            binding.onOff.text = "ON"
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            serviceBound = false
+            binding.onOff.text = "OFF"
+        }
+    }
+
+    fun bindService() {
+        Intent(activity!!, SRAService::class.java).also { intent ->
+            activity!!.bindService(intent, connection, 0)
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        bindService()
+    }
+
+    fun unbindService() {
+        activity!!.unbindService(connection)
+        serviceBound = false
+        binding.onOff.text = "OFF"
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (serviceBound) unbindService()
+    }
+
+
+
 
     private val clock = object : Runnable {
         override fun run() {
@@ -67,8 +117,20 @@ class HomeFragment : Fragment(), SensorEventListener {
             textView.text = /*it*/ "Spotify Running App"
         }
 
-        binding.skipSong.setOnClickListener { binding.displaySong.text = "next song" }
-        binding.onOff.setOnClickListener { binding.onOff.text = if (binding.onOff.text == "OFF"/*realne je to off*/) "ON" else "OFF" }
+        binding.skipSong.setOnClickListener { binding.displaySong.text = "next song" } //TODO
+        binding.onOff.setOnClickListener {
+            if (serviceBound) {
+                unbindService()
+                Intent(activity!!, SRAService::class.java).also {
+                    activity!!.stopService(it)
+                }
+            } else {
+                Intent(activity!!, SRAService::class.java).also {
+                    activity!!.startService(it)
+                }
+                bindService()
+            }
+        }
 
         sensorManager = activity!!.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -106,6 +168,7 @@ class HomeFragment : Fragment(), SensorEventListener {
 
     override fun onResume() {
         super.onResume()
+        bindService() //TODO: remove?
         running = true
         val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
@@ -124,13 +187,12 @@ class HomeFragment : Fragment(), SensorEventListener {
         }
     }
 
-    //TODO: nejak updatovat previousTotalSteps
-
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
     }
 
     override fun onPause() {
         super.onPause()
+        if (serviceBound) unbindService() //TODO: remove?
         mainHandler.removeCallbacks(clock) // TODO: remove az to bude na pozadi
     }
 
@@ -145,6 +207,12 @@ class HomeFragment : Fragment(), SensorEventListener {
         val cadence = (totalSteps - stepsPrevious[stepsPreviousIdx]) * (60 / stepsPreviousSize) //convert to per minute
         stepsPrevious[stepsPreviousIdx] = totalSteps //store totalSteps into history
         cadencePrevious[cadencePreviousIdx] = cadence //store cadence into history
+
+        var maybetext = ""
+
+        if (serviceBound) {
+            maybetext = sraService?.getNumber().toString()
+        }
 
         binding.textHome.text = "clock: " + seconds.toString() +
                 "\n totalSteps: " + totalSteps.toString() +
@@ -162,7 +230,8 @@ class HomeFragment : Fragment(), SensorEventListener {
                 "\n cadencePrev[6]: " + cadencePrevious[6].toString() +
                 "\n cadencePrev[7]: " + cadencePrevious[7].toString() +
                 "\n cadencePrev[8]: " + cadencePrevious[8].toString() +
-                "\n cadencePrev[9]: " + cadencePrevious[9].toString()
+                "\n cadencePrev[9]: " + cadencePrevious[9].toString() +
+                "\n" + maybetext
 
         displayCadence(cadencePrevious.average().toInt())
     }
