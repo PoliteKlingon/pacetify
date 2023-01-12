@@ -14,6 +14,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -23,14 +24,22 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.myapplication.SRAService
 import com.example.myapplication.databinding.FragmentHomeBinding
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import java.util.concurrent.CancellationException
 
-class HomeFragment : Fragment(), SensorEventListener {
+class HomeFragment : Fragment()/*, SensorEventListener*/ {
 
     private var _binding: FragmentHomeBinding? = null
 
-    private lateinit var sensorManager: SensorManager
+    /*private lateinit var sensorManager: SensorManager
 
     private var running = false
     private var totalSteps = 0f
@@ -43,12 +52,20 @@ class HomeFragment : Fragment(), SensorEventListener {
     private var cadencePreviousSize = 10
 
     lateinit var mainHandler: Handler
-    private var seconds: Int = 0
+    private var seconds: Int = 0*/
 
 
 
     private var sraService: SRAService? = null
     private var serviceBound: Boolean = false
+
+    private var cadenceFlow: MutableStateFlow<String>? = null
+    private var homeTextFlow: MutableStateFlow<String>? = null
+    private var songNameFlow: MutableStateFlow<String>? = null
+
+    private var cadenceFlowObserver: Job? = null
+    private var homeTextFlowObserver: Job? = null
+    private var songNameFlowObserver: Job? = null
 
     private val connection = object : ServiceConnection {
 
@@ -56,12 +73,46 @@ class HomeFragment : Fragment(), SensorEventListener {
             val binder = service as SRAService.SRABinder
             sraService = binder.getService()
             serviceBound = true
-            binding.onOff.text = "ON"
+            binding.onOff.text = "ON" //TODO TOTO DELA PROBLEMY EVIDENTNE
+
+            if (sraService == null) {
+                Log.d("asdasd", "ASDASD")
+            }
+            val flows = sraService?.getFlows() // TODO: Problem?
+            if (flows != null) {
+                cadenceFlow = flows[0]
+                homeTextFlow = flows[1]
+                songNameFlow = flows[2]
+            }
+
+            Log.d("tre", "service connected")
+
+            cadenceFlowObserver = lifecycleScope.launchWhenStarted {
+                cadenceFlow?.collectLatest {
+                    binding.displayCadence.text = it
+                    Log.d("asd", "1")
+                }
+            }
+            homeTextFlowObserver = lifecycleScope.launchWhenStarted {
+                homeTextFlow?.collectLatest {
+                    binding.textHome.text = it
+                    Log.d("asd", "2")
+                }
+            }
+            songNameFlowObserver = lifecycleScope.launchWhenStarted {
+            songNameFlow?.collectLatest {
+                    binding.displaySong.text = it
+                    Log.d("asd", "3")
+                }
+            }
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             serviceBound = false
             binding.onOff.text = "OFF"
+            cadenceFlowObserver?.cancel(CancellationException())
+            homeTextFlowObserver?.cancel(CancellationException())
+            songNameFlowObserver?.cancel(CancellationException())
         }
     }
 
@@ -80,6 +131,21 @@ class HomeFragment : Fragment(), SensorEventListener {
         activity!!.unbindService(connection)
         serviceBound = false
         binding.onOff.text = "OFF"
+
+        binding.displayCadence.text = "You have to start the Service first"
+        binding.textHome.text = "You have to start the Service first"
+        binding.displaySong.text = "You have to start the Service first"
+
+        cadenceFlow = null
+        homeTextFlow = null
+        songNameFlow = null
+
+        cadenceFlowObserver?.cancel(CancellationException())
+        cadenceFlowObserver = null
+        homeTextFlowObserver?.cancel(CancellationException())
+        homeTextFlowObserver = null
+        songNameFlowObserver?.cancel(CancellationException())
+        songNameFlowObserver = null
     }
 
     override fun onStop() {
@@ -90,12 +156,12 @@ class HomeFragment : Fragment(), SensorEventListener {
 
 
 
-    private val clock = object : Runnable {
+    /*private val clock = object : Runnable {
         override fun run() {
             tick()
             mainHandler.postDelayed(this, 1000)
         }
-    }
+    }*/
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -132,7 +198,25 @@ class HomeFragment : Fragment(), SensorEventListener {
             }
         }
 
-        sensorManager = activity!!.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        if (cadenceFlow != null) {
+            binding.displayCadence.text = "Step cadence: ${cadenceFlow!!.value}" //TODO: vyresit lepe
+        } else {
+            binding.displayCadence.text = "You have to start the Service first"
+        }
+
+        if (homeTextFlow != null) {
+            binding.textHome.text = homeTextFlow!!.value //TODO: vyresit lepe
+        } else {
+            binding.textHome.text = "You have to start the Service first"
+        }
+
+        if (songNameFlow != null) {
+            binding.displaySong.text = songNameFlow!!.value //TODO: vyresit lepe
+        } else {
+            binding.displaySong.text = "You have to start the Service first"
+        }
+
+        /*sensorManager = activity!!.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         if (ContextCompat.checkSelfPermission(activity!!,
                 Manifest.permission.ACTIVITY_RECOGNITION) !=
@@ -152,14 +236,14 @@ class HomeFragment : Fragment(), SensorEventListener {
         cadencePrevious = Array(cadencePreviousSize) { 0f } //cadence recorded for the last ten seconds
 
         mainHandler = Handler(Looper.getMainLooper())
-        //mainHandler.post(clock)
+        //mainHandler.post(clock)*/
 
         return root
     }
 
-    fun displayCadence(cadence: Int) {
+    /*fun displayCadence(cadence: Int) {
         binding.displayCadence.text = "Step cadence: " + cadence.toString()
-    }
+    }*/
 
     override fun onDestroyView() {
         super.onDestroyView()
@@ -169,7 +253,7 @@ class HomeFragment : Fragment(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         bindService() //TODO: remove?
-        running = true
+        /*running = true
         val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
         if (stepSensor == null) {
@@ -178,25 +262,25 @@ class HomeFragment : Fragment(), SensorEventListener {
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL) //TODO: jiny delay?
         }
 
-        mainHandler.post(clock) // TODO: remove az to bude na pozadi
+        mainHandler.post(clock) // TODO: remove az to bude na pozadi*/
     }
 
-    override fun onSensorChanged(p0: SensorEvent?) {
+    /*override fun onSensorChanged(p0: SensorEvent?) {
         if (running) {
             totalSteps = p0!!.values[0]
         }
-    }
+    }*/
 
-    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
-    }
+    /*override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+    }*/
 
     override fun onPause() {
         super.onPause()
         if (serviceBound) unbindService() //TODO: remove?
-        mainHandler.removeCallbacks(clock) // TODO: remove az to bude na pozadi
+        /*mainHandler.removeCallbacks(clock) // TODO: remove az to bude na pozadi*/
     }
 
-    fun tick() {
+    /*fun tick() {
         if (stepsPrevious[stepsPreviousIdx] < 1) {
             stepsPrevious = stepsPrevious.map { totalSteps }.toTypedArray()
         }
@@ -211,7 +295,7 @@ class HomeFragment : Fragment(), SensorEventListener {
         var maybetext = ""
 
         if (serviceBound) {
-            maybetext = sraService?.getNumber().toString()
+            //maybetext = sraService?.getNumber().toString()
         }
 
         binding.textHome.text = "clock: " + seconds.toString() +
@@ -234,5 +318,5 @@ class HomeFragment : Fragment(), SensorEventListener {
                 "\n" + maybetext
 
         displayCadence(cadencePrevious.average().toInt())
-    }
+    }*/
 }
