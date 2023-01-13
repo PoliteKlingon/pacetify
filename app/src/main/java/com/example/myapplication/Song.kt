@@ -2,9 +2,10 @@ package com.example.myapplication
 
 import androidx.room.Entity
 
-@Entity(primaryKeys = ["id", "fromPlaylist"])
+@Entity(primaryKeys = ["uri", "fromPlaylist"])
 data class Song (
-    val id: Int,
+    val uri: String,
+    val name: String,
     val bpm: Int,
     val fromPlaylist: String,
     )

@@ -141,6 +141,14 @@ class SRAService : Service(), SensorEventListener {
         //TODO
     }
 
+    fun getSongsFromPlaylist(playlist: Playlist): List<Song> {
+        return listOf()//TODO
+    }
+
+    fun isValidUri(uri: String) : Boolean {
+        return true //TODO
+    }
+
     private val clock = object : Runnable {
         override fun run() {
             tick()

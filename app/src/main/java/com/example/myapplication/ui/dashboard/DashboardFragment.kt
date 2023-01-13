@@ -1,6 +1,11 @@
 package com.example.myapplication.ui.dashboard
 
+import android.content.ComponentName
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,14 +16,60 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.example.myapplication.Playlist
-import com.example.myapplication.SRADao
 import com.example.myapplication.SRADatabase
+import com.example.myapplication.SRAService
 import com.example.myapplication.databinding.FragmentDashboardBinding
 import kotlinx.coroutines.launch
 
 class DashboardFragment : Fragment() {
 
     private var _binding: FragmentDashboardBinding? = null
+
+    private var sraService: SRAService? = null
+    private var serviceBound: Boolean = false
+
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as SRAService.SRABinder
+            sraService = binder.getService()
+            serviceBound = true
+
+            Log.d("DashboardFragment", "service connected")
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            serviceBound = false
+        }
+    }
+
+    private fun bindService() {
+        Intent(activity!!, SRAService::class.java).also { intent ->
+            activity!!.bindService(intent, connection, 0)
+        }
+    }
+
+    private fun unbindService() {
+        activity!!.unbindService(connection)
+        serviceBound = false
+        binding.btnAddPlaylist.isEnabled = false
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (serviceBound) unbindService()
+        _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindService()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (serviceBound) unbindService()
+    }
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -71,7 +122,12 @@ class DashboardFragment : Fragment() {
             else if (uri.isEmpty())
                 Toast.makeText(activity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (playlists.map { p -> p.name } .contains(name))
-                Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show() //TODO pridat check validity URL
+                Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
+            else if (sraService == null) {
+                Toast.makeText(activity, "For adding playlists, the service must be running", Toast.LENGTH_LONG).show()
+            }
+            else if (!sraService!!.isValidUri(uri))
+                Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
             else {
                 val playlist = Playlist(uri, name)
                 playlists.add(playlist)
@@ -80,16 +136,16 @@ class DashboardFragment : Fragment() {
                 binding.etNewPlaylistName.setText("")
                 binding.etNewPlaylistUri.setText("")
                 lifecycleScope.launch {
-                    dao.addPlaylist(playlist)
+                    dao.insertPlaylist(playlist)
+                    if (sraService != null) {
+                        for (song in sraService!!.getSongsFromPlaylist(playlist)) {
+                            dao.insertSong(song)
+                        }
+                    }
                 }
             }
         }
 
         return root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

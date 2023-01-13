@@ -9,12 +9,12 @@ import androidx.room.Transaction
 @Dao
 interface SRADao {
     @Insert(entity = Playlist::class, onConflict = OnConflictStrategy.REPLACE)
-    suspend fun _insertPlaylist(playlist: Playlist)
+    suspend fun insertPlaylist(playlist: Playlist)
 
     @Insert(entity = Song::class, onConflict = OnConflictStrategy.REPLACE)
-    suspend fun _insertSong(song: Song)
+    suspend fun insertSong(song: Song)
 
-    @Query("SELECT * FROM Song GROUP BY id ORDER BY bpm ASC")
+    @Query("SELECT * FROM Song GROUP BY uri ORDER BY bpm ASC")
     suspend fun getSongs(): List<Song>
 
     @Query("SELECT * FROM Playlist")
@@ -30,13 +30,5 @@ interface SRADao {
     suspend fun deletePlaylist(playlistName: String) {
         _deletePlaylistSongs(playlistName)
         _deletePlaylistPlaylist(playlistName)
-    }
-
-    @Transaction
-    suspend fun addPlaylist(playlist: Playlist) {
-        _insertPlaylist(playlist)
-        /*for song in playlist    TODO!!!
-            _insertSong(song)
-        */
     }
 }
