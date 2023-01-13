@@ -71,7 +71,7 @@ class DashboardFragment : Fragment() {
             else if (uri.isEmpty())
                 Toast.makeText(activity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (playlists.map { p -> p.name } .contains(name))
-                Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
+                Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show() //TODO pridat check validity URL
             else {
                 val playlist = Playlist(uri, name)
                 playlists.add(playlist)

@@ -11,11 +11,9 @@ import android.os.Binder
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import android.widget.Toast
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flow
 
 class SRAService : Service(), SensorEventListener {
 
@@ -36,9 +34,9 @@ class SRAService : Service(), SensorEventListener {
     lateinit var mainHandler: Handler
     private var seconds: Int = 0
 
-    private var cadenceFlow = MutableStateFlow<String>("")
-    private var homeTextFlow = MutableStateFlow<String>("")
-    private var songNameFlow = MutableStateFlow<String>("")
+    private var cadenceFlow = MutableStateFlow("")
+    private var homeTextFlow = MutableStateFlow("")
+    private var songNameFlow = MutableStateFlow("")
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -61,13 +59,15 @@ class SRAService : Service(), SensorEventListener {
         running = true
         val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
+        Log.d("service", "onstartCommand")
+
         if (stepSensor == null) {
             Toast.makeText(applicationContext, "No sensor detected on this device", Toast.LENGTH_LONG).show()
         } else {
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL) //TODO: jiny delay?
         }
 
-        mainHandler.post(clock) // TODO: remove az to bude na pozadi?
+        mainHandler.post(clock)
 
         return START_REDELIVER_INTENT
     }
@@ -135,6 +135,10 @@ class SRAService : Service(), SensorEventListener {
 
     fun getFlows(): Array<MutableStateFlow<String>> {
         return arrayOf(cadenceFlow, homeTextFlow, songNameFlow)
+    }
+
+    fun skipSong() {
+        //TODO
     }
 
     private val clock = object : Runnable {
