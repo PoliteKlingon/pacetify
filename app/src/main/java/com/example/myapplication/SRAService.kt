@@ -13,7 +13,11 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import com.spotify.android.appremote.api.ConnectionParams
+import com.spotify.android.appremote.api.Connector;
+import com.spotify.android.appremote.api.SpotifyAppRemote
 import kotlinx.coroutines.flow.MutableStateFlow
+
 
 class SRAService : Service(), SensorEventListener {
 
@@ -37,6 +41,12 @@ class SRAService : Service(), SensorEventListener {
     private var cadenceFlow = MutableStateFlow("")
     private var homeTextFlow = MutableStateFlow("")
     private var songNameFlow = MutableStateFlow("")
+
+    private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
+    //private val REDIRECT_URI = "http://com.example.myapplication/callback" //TODO
+    private val REDIRECT_URI = "com.example.myapplication://callback" //TODO
+    private var mSpotifyAppRemote: SpotifyAppRemote? = null
+
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -69,7 +79,42 @@ class SRAService : Service(), SensorEventListener {
 
         mainHandler.post(clock)
 
+        // SPOTIFY:
+        // Set the connection parameters
+        val connectionParams = ConnectionParams.Builder(CLIENT_ID)
+            .setRedirectUri(REDIRECT_URI)
+            .showAuthView(true)
+            .setRequiredFeatures(listOf())
+            .build()
+
+        SpotifyAppRemote.connect(this, connectionParams,
+            object : Connector.ConnectionListener {
+                override fun onConnected(spotifyAppRemote: SpotifyAppRemote) {
+                    mSpotifyAppRemote = spotifyAppRemote
+                    Log.d("SRAService", "Connected! Yay!")
+
+                    // Now you can start interacting with App Remote
+                    connected()
+                }
+
+                override fun onFailure(throwable: Throwable) {
+                    Log.e("SRAService", throwable.message, throwable)
+
+                    // Something went wrong when attempting to connect! Handle errors here
+                }
+            })
+
+
         return START_REDELIVER_INTENT
+    }
+
+    fun connected() {
+        mSpotifyAppRemote?.playerApi?.play("spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
     }
 
     /*override fun onResume() {
