@@ -136,11 +136,12 @@ class DashboardFragment : Fragment() {
                 binding.etNewPlaylistName.setText("")
                 binding.etNewPlaylistUri.setText("")
                 lifecycleScope.launch {
-                    dao.insertPlaylist(playlist)
                     if (sraService != null) {
                         for (song in sraService!!.getSongsFromPlaylist(playlist)) {
                             dao.insertSong(song)
                         }
+                        dao.insertPlaylist(playlist)
+                        sraService!!.notifyPlaylistsChanged()
                     }
                 }
             }

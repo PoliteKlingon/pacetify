@@ -3,6 +3,7 @@ package com.example.myapplication
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -16,7 +17,11 @@ import android.widget.Toast
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 
 class SRAService : Service(), SensorEventListener {
@@ -43,10 +48,17 @@ class SRAService : Service(), SensorEventListener {
     private var songNameFlow = MutableStateFlow("")
 
     private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
-    //private val REDIRECT_URI = "http://com.example.myapplication/callback" //TODO
-    private val REDIRECT_URI = "com.example.myapplication://callback" //TODO
+    private val REDIRECT_URI = "com.example.myapplication://callback" //TODO??
     private var mSpotifyAppRemote: SpotifyAppRemote? = null
 
+    private var dao: SRADao? = null
+    private var sharedPref: SharedPreferences? = null
+
+    private var motivate = false
+    private var rest = false
+    private var restTime = 20
+
+    private var songs: List<Song> = listOf()
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -76,6 +88,12 @@ class SRAService : Service(), SensorEventListener {
         } else {
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL) //TODO: jiny delay?
         }
+
+        dao = SRADatabase.getInstance(this).SRADao
+        loadSongs()
+
+        sharedPref = this.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        loadSettings()
 
         mainHandler.post(clock)
 
@@ -110,11 +128,15 @@ class SRAService : Service(), SensorEventListener {
 
     fun connected() {
         mSpotifyAppRemote?.playerApi?.play("spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            homeTextFlow.value = dao?.getPlaylists().toString()
+        }
     }
 
     override fun onDestroy() {
         super.onDestroy()
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
+        Log.d("SRAService", "disconnected from Spotify")
     }
 
     /*override fun onResume() {
@@ -158,7 +180,7 @@ class SRAService : Service(), SensorEventListener {
         cadence = cadencePrevious.average().toInt()
 
         cadenceFlow.value = "Cadence: $cadence steps per minute"
-        homeTextFlow.value = "clock: " + seconds.toString() +
+        /*homeTextFlow.value = "clock: " + seconds.toString() +
                 "\n totalSteps: " + totalSteps.toString() +
                 "\n stepsPrev[0]: " + stepsPrevious[0].toString() +
                 "\n stepsPrev[1]: " + stepsPrevious[1].toString() +
@@ -175,7 +197,7 @@ class SRAService : Service(), SensorEventListener {
                 "\n cadencePrev[7]: " + cadencePrevious[7].toString() +
                 "\n cadencePrev[8]: " + cadencePrevious[8].toString() +
                 "\n cadencePrev[9]: " + cadencePrevious[9].toString()
-        songNameFlow.value = ""
+        songNameFlow.value = ""*/
     }
 
     fun getFlows(): Array<MutableStateFlow<String>> {
@@ -183,7 +205,7 @@ class SRAService : Service(), SensorEventListener {
     }
 
     fun skipSong() {
-        //TODO
+        mSpotifyAppRemote?.playerApi?.skipNext()
     }
 
     fun getSongsFromPlaylist(playlist: Playlist): List<Song> {
@@ -194,10 +216,34 @@ class SRAService : Service(), SensorEventListener {
         return true //TODO
     }
 
+    fun notifyPlaylistsChanged() {
+        loadSongs()
+    }
+
+    fun notifySettingsChanged() {
+        loadSettings()
+    }
+
+    private fun loadSettings() {
+        if (sharedPref != null) {
+            motivate = sharedPref!!.getBoolean("motivate", false)
+            rest = sharedPref!!.getBoolean("rest", false)
+            restTime = sharedPref!!.getInt("progress", 20)
+        }
+    }
+
+    private fun loadSongs() {
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            if (dao != null) songs = dao!!.getSongs()
+        }
+    }
+
     private val clock = object : Runnable {
         override fun run() {
             tick()
             mainHandler.postDelayed(this, 1000)
         }
     }
+
+    //TODO hlavni funkcionalita zde
 }

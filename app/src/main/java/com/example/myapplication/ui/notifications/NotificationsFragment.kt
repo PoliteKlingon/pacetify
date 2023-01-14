@@ -1,8 +1,13 @@
 package com.example.myapplication.ui.notifications
 
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.hardware.SensorEventListener
 import android.os.Bundle
+import android.os.IBinder
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,6 +16,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.myapplication.SRAService
 import com.example.myapplication.databinding.FragmentNotificationsBinding
 
 class NotificationsFragment : Fragment() {
@@ -20,6 +26,51 @@ class NotificationsFragment : Fragment() {
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    private var sraService: SRAService? = null
+    private var serviceBound: Boolean = false
+
+    private val connection = object : ServiceConnection {
+
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as SRAService.SRABinder
+            sraService = binder.getService()
+            serviceBound = true
+
+            Log.d("NotificationsFragment", "service connected")
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            serviceBound = false
+        }
+    }
+
+    private fun bindService() {
+        Intent(activity!!, SRAService::class.java).also { intent ->
+            activity!!.bindService(intent, connection, 0)
+        }
+    }
+
+    private fun unbindService() {
+        activity!!.unbindService(connection)
+        serviceBound = false
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        if (serviceBound) unbindService()
+        _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindService()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (serviceBound) unbindService()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -53,6 +104,7 @@ class NotificationsFragment : Fragment() {
 
                 prefEditor.putInt("progress", progress)
                 prefEditor.apply()
+                if (serviceBound) sraService?.notifySettingsChanged()
             }
 
             override fun onStartTrackingTouch(p0: SeekBar?) {}
@@ -63,19 +115,16 @@ class NotificationsFragment : Fragment() {
         binding.swMotivate.setOnClickListener {
             prefEditor.putBoolean("motivate", binding.swMotivate.isChecked)
             prefEditor.apply()
+            if (serviceBound) sraService?.notifySettingsChanged()
         }
 
         binding.swRest.setOnClickListener {
             prefEditor.putBoolean("rest", binding.swRest.isChecked)
             prefEditor.apply()
             binding.sbRest.isEnabled = binding.swRest.isChecked
+            if (serviceBound) sraService?.notifySettingsChanged()
         }
 
         return root
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
     }
 }

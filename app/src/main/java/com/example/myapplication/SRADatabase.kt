@@ -16,7 +16,7 @@ abstract class SRADatabase :RoomDatabase() {
         fun getInstance(context: Context): SRADatabase {
             synchronized(this) {
                 return INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
+                    context,
                     SRADatabase::class.java,
                     "sra_db"
                 ).build().also {
