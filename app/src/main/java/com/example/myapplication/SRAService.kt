@@ -17,6 +17,8 @@ import android.widget.Toast
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import com.spotify.protocol.types.PlayerState
+import com.spotify.protocol.types.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -131,6 +133,13 @@ class SRAService : Service(), SensorEventListener {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             homeTextFlow.value = dao?.getPlaylists().toString()
         }
+
+        //display current song
+        mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
+            ?.setEventCallback { event ->
+                val track = event.track
+                songNameFlow.value = "${track.name}\n ${track.artist.name}\n ${track.album.name}"
+            }
     }
 
     override fun onDestroy() {
