@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.example.myapplication.*
 import com.example.myapplication.databinding.FragmentDashboardBinding
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class DashboardFragment : Fragment() {
@@ -72,6 +73,7 @@ class DashboardFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
     private lateinit var playlists: MutableList<Playlist>
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -108,6 +110,13 @@ class DashboardFragment : Fragment() {
         lifecycleScope.launch {
             playlists.addAll(dao.getPlaylists())
             adapter.notifyDataSetChanged()
+        }
+
+        lifecycleScope.launch {
+            while(true) {
+                adapter.notifyDataSetChanged()
+                delay(1000)
+            }
         }
 
         binding.btnAddPlaylist.setOnClickListener {

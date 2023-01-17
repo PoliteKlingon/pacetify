@@ -194,14 +194,6 @@ class HomeFragment : Fragment() {
                 Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED
         ) requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
 
-        if (ContextCompat.checkSelfPermission(activity!!,
-                Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED
-        ) requestPermission.launch(Manifest.permission.ACCESS_NETWORK_STATE)
-
-        if (ContextCompat.checkSelfPermission(activity!!,
-                Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED
-        ) requestPermission.launch(Manifest.permission.ACCESS_WIFI_STATE)
-
         return root
     }
 
