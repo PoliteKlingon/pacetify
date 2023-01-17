@@ -129,19 +129,25 @@ class DashboardFragment : Fragment() {
             else if (!sraService!!.isValidUri(uri))
                 Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
             else {
-                val playlist = Playlist(uri, name)
-                playlists.add(playlist)
-                binding.tvNoPlaylists.text = ""
-                adapter.notifyItemInserted(playlists.size - 1)
-                binding.etNewPlaylistName.setText("")
-                binding.etNewPlaylistUri.setText("")
-                lifecycleScope.launch {
-                    if (sraService != null) {
-                        for (song in sraService!!.getSongsFromPlaylist(playlist)) {
-                            dao.insertSong(song)
+                val id = uri.takeLastWhile { ch -> ch != '/' }
+                val playlist = Playlist("spotify:playlist:$id", name) //TODO asi spatne tvorene uri
+                val songs = sraService?.getSongsFromPlaylist(playlist)
+                if (songs == null) {
+                    Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
+                } else {
+                    playlists.add(playlist)
+                    binding.tvNoPlaylists.text = ""
+                    adapter.notifyItemInserted(playlists.size - 1)
+                    binding.etNewPlaylistName.setText("")
+                    binding.etNewPlaylistUri.setText("")
+                    lifecycleScope.launch {
+                        if (sraService != null) {
+                            for (song in songs) {
+                                dao.insertSong(song)
+                            }
+                            dao.insertPlaylist(playlist)
+                            sraService!!.notifyPlaylistsChanged()
                         }
-                        dao.insertPlaylist(playlist)
-                        sraService!!.notifyPlaylistsChanged()
                     }
                 }
             }

@@ -13,10 +13,12 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
+import android.webkit.URLUtil
 import android.widget.Toast
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote
+import com.spotify.protocol.client.Subscription
 import com.spotify.protocol.types.PlayerState
 import com.spotify.protocol.types.Track
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +63,8 @@ class SRAService : Service(), SensorEventListener {
     private var restTime = 20
 
     private var songs: List<Song> = listOf()
+
+    private var playerStateSubscription: Subscription<PlayerState>? = null
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -135,7 +139,7 @@ class SRAService : Service(), SensorEventListener {
         }
 
         //display current song
-        mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
+        playerStateSubscription = mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
             ?.setEventCallback { event ->
                 val track = event.track
                 songNameFlow.value = "${track.name}\n ${track.artist.name}\n ${track.album.name}"
@@ -144,6 +148,7 @@ class SRAService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        playerStateSubscription?.cancel()
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
         Log.d("SRAService", "disconnected from Spotify")
     }
@@ -222,7 +227,8 @@ class SRAService : Service(), SensorEventListener {
     }
 
     fun isValidUri(uri: String) : Boolean {
-        return true //TODO
+        return URLUtil.isValidUrl(uri) &&
+            uri.matches(Regex("https://open.spotify.com/playlist/[a-zA-Z0-9]*"))
     }
 
     fun notifyPlaylistsChanged() {
