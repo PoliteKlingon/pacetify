@@ -16,16 +16,21 @@ import android.util.Log
 import android.webkit.URLUtil
 import android.widget.Toast
 import com.spotify.android.appremote.api.ConnectionParams
-import com.spotify.android.appremote.api.Connector;
+import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import com.spotify.protocol.client.Subscription
 import com.spotify.protocol.types.PlayerState
-import com.spotify.protocol.types.Track
+import com.spotify.sdk.android.auth.AuthorizationClient
+import com.spotify.sdk.android.auth.AuthorizationRequest
+import com.spotify.sdk.android.auth.AuthorizationResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import okhttp3.*
+import org.json.JSONException
+import java.io.IOException
 
 
 class SRAService : Service(), SensorEventListener {
@@ -54,6 +59,7 @@ class SRAService : Service(), SensorEventListener {
     private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
     private val REDIRECT_URI = "com.example.myapplication://callback" //TODO??
     private var mSpotifyAppRemote: SpotifyAppRemote? = null
+
 
     private var dao: SRADao? = null
     private var sharedPref: SharedPreferences? = null
@@ -103,7 +109,7 @@ class SRAService : Service(), SensorEventListener {
 
         mainHandler.post(clock)
 
-        // SPOTIFY:
+        // SPOTIFY SDK:
         // Set the connection parameters
         val connectionParams = ConnectionParams.Builder(CLIENT_ID)
             .setRedirectUri(REDIRECT_URI)
@@ -133,7 +139,7 @@ class SRAService : Service(), SensorEventListener {
     }
 
     fun connected() {
-        mSpotifyAppRemote?.playerApi?.play("spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
+        //mSpotifyAppRemote?.playerApi?.play("spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             homeTextFlow.value = dao?.getPlaylists().toString()
         }
@@ -152,6 +158,8 @@ class SRAService : Service(), SensorEventListener {
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
         Log.d("SRAService", "disconnected from Spotify")
     }
+
+
 
     /*override fun onResume() {
         running = true
@@ -222,15 +230,6 @@ class SRAService : Service(), SensorEventListener {
         mSpotifyAppRemote?.playerApi?.skipNext()
     }
 
-    fun getSongsFromPlaylist(playlist: Playlist): List<Song> {
-        return listOf()//TODO
-    }
-
-    fun isValidUri(uri: String) : Boolean {
-        return URLUtil.isValidUrl(uri) &&
-            uri.matches(Regex("https://open.spotify.com/playlist/[a-zA-Z0-9]*"))
-    }
-
     fun notifyPlaylistsChanged() {
         loadSongs()
     }
@@ -260,5 +259,10 @@ class SRAService : Service(), SensorEventListener {
         }
     }
 
-    //TODO hlavni funkcionalita zde
+    //TODO hlavni funkcionalita
+        //TODO zaradit pokud zmena bpm nebo jsem na konci songu (duration - progress v SDK api)
+        //TODO vybrat song se spravnym bpm
+        //TODO skip pripadne
+        //TODO asi to bude v ticku, ne? idk
+        //TODO fake crossfade pomoci hlasitosti?
 }

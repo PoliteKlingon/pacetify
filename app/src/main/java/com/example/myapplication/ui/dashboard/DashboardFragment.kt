@@ -15,9 +15,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
-import com.example.myapplication.Playlist
-import com.example.myapplication.SRADatabase
-import com.example.myapplication.SRAService
+import com.example.myapplication.*
 import com.example.myapplication.databinding.FragmentDashboardBinding
 import kotlinx.coroutines.launch
 
@@ -52,7 +50,6 @@ class DashboardFragment : Fragment() {
     private fun unbindService() {
         activity!!.unbindService(connection)
         serviceBound = false
-        binding.btnAddPlaylist.isEnabled = false
     }
 
     override fun onDestroyView() {
@@ -123,32 +120,29 @@ class DashboardFragment : Fragment() {
                 Toast.makeText(activity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (playlists.map { p -> p.name } .contains(name))
                 Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
-            else if (sraService == null) {
-                Toast.makeText(activity, "For adding playlists, the service must be running", Toast.LENGTH_LONG).show()
-            }
-            else if (!sraService!!.isValidUri(uri))
+            else if (!Utils.isValidSpotifyPlaylistUri(uri))
                 Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
+            else if (!Utils.isInternetAvailable())
+                Toast.makeText(activity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
-                val id = uri.takeLastWhile { ch -> ch != '/' }
-                val playlist = Playlist("spotify:playlist:$id", name) //TODO asi spatne tvorene uri
-                val songs = sraService?.getSongsFromPlaylist(playlist)
-                if (songs == null) {
-                    Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
-                } else {
-                    playlists.add(playlist)
-                    binding.tvNoPlaylists.text = ""
-                    adapter.notifyItemInserted(playlists.size - 1)
-                    binding.etNewPlaylistName.setText("")
-                    binding.etNewPlaylistUri.setText("")
-                    lifecycleScope.launch {
-                        if (sraService != null) {
-                            for (song in songs) {
-                                dao.insertSong(song)
-                            }
-                            dao.insertPlaylist(playlist)
-                            sraService!!.notifyPlaylistsChanged()
-                        }
-                    }
+                var id = uri.takeLastWhile { ch -> ch != '/' }
+                if (id.contains('?')) {
+                    id = id.takeWhile { ch -> ch != '?' }
+                }
+
+                val playlist = Playlist(id, name)
+
+                (activity as MainActivity?)?.addSongsFromPlaylist(playlist)
+
+                playlists.add(playlist)
+                binding.tvNoPlaylists.text = ""
+                adapter.notifyItemInserted(playlists.size - 1)
+                binding.etNewPlaylistName.setText("")
+                binding.etNewPlaylistUri.setText("")
+
+                lifecycleScope.launch {
+                    dao.insertPlaylist(playlist)
+                    if (serviceBound) sraService?.notifyPlaylistsChanged()
                 }
             }
         }
