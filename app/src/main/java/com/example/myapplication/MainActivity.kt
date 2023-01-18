@@ -1,7 +1,11 @@
 package com.example.myapplication
 
 
+import android.content.Context
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.ConnectivityManager.NetworkCallback
+import android.net.Network
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -35,6 +39,9 @@ class MainActivity : AppCompatActivity() {
     private var mCall: Call? = null
 
     private var dao: SRADao? = null
+
+    private lateinit var connectivityManager: ConnectivityManager
+    private lateinit var networkCallback: NetworkCallback
 
     private fun cancelCall() {
         mCall?.cancel()
@@ -146,6 +153,14 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    fun isTokenAcquired(): Boolean {
+        return mAccessToken != null
+    }
+
+    fun isNetworkBeingUsed(): Boolean {
+        return mCall != null //TODO - tady asi prameni i problemy s random delkou - tem jednotnej mCall nezni moc ok
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -161,8 +176,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (mAccessToken == null && Utils.isInternetAvailable()) requestToken()
-        dao = SRADatabase.getInstance(this).SRADao
+
+        connectivityManager.registerDefaultNetworkCallback(networkCallback)
+
+        if (dao == null) dao = SRADatabase.getInstance(this).SRADao
+    }
+
+    override fun onPause() {
+        super.onPause()
+        connectivityManager.unregisterNetworkCallback(networkCallback)
     }
 
     override fun onDestroy() {
@@ -172,6 +194,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+        networkCallback = object: NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                super.onAvailable(network)
+                if (mAccessToken == null) requestToken()
+            }
+        }
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)

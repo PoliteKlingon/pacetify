@@ -102,7 +102,7 @@ class DashboardFragment : Fragment() {
             }
         }
 
-        val adapter = PlaylistAdapter(playlists, dao, lifecycleScope)
+        val adapter = PlaylistAdapter(playlists, dao, lifecycleScope, activity as MainActivity?)
         binding.rvPlaylists.adapter = adapter
         adapter.registerAdapterDataObserver(PlaylistAdapterDataObserver())
         binding.rvPlaylists.layoutManager = LinearLayoutManager(activity)
@@ -110,13 +110,6 @@ class DashboardFragment : Fragment() {
         lifecycleScope.launch {
             playlists.addAll(dao.getPlaylists())
             adapter.notifyDataSetChanged()
-        }
-
-        lifecycleScope.launch {
-            while(true) {
-                adapter.notifyDataSetChanged()
-                delay(1000)
-            }
         }
 
         binding.btnAddPlaylist.setOnClickListener {
@@ -131,7 +124,7 @@ class DashboardFragment : Fragment() {
                 Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
             else if (!Utils.isValidSpotifyPlaylistUri(uri))
                 Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
-            else if (!Utils.isInternetAvailable())
+            else if (((activity as MainActivity?)?.isTokenAcquired()) != true) //is null or false
                 Toast.makeText(activity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
                 var id = uri.takeLastWhile { ch -> ch != '/' }
@@ -153,9 +146,20 @@ class DashboardFragment : Fragment() {
                     dao.insertPlaylist(playlist)
                     if (serviceBound) sraService?.notifyPlaylistsChanged()
                 }
+
+                insertedPlaylist(adapter)
             }
         }
 
         return root
+    }
+
+    private fun insertedPlaylist(adapter: PlaylistAdapter) {
+        lifecycleScope.launch {
+            while((activity as MainActivity?)?.isNetworkBeingUsed() == true) {
+                adapter.notifyDataSetChanged()
+                delay(1000) //TODO is there a better way?
+            }
+        }
     }
 }
