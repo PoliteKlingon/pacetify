@@ -138,7 +138,6 @@ class SRAService : Service(), SensorEventListener {
     }
 
     fun connected() {
-        //mSpotifyAppRemote?.playerApi?.play("spotify:playlist:37i9dQZF1DX2sUQwD7tbmL");
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             homeTextFlow.value = dao?.getPlaylists().toString()
         }
@@ -149,6 +148,9 @@ class SRAService : Service(), SensorEventListener {
                 val track = event.track
                 songNameFlow.value = "${track.name}\n ${track.artist.name}\n ${track.album.name}"
             }
+
+        //play first song
+        playSong(chooseSong(140))
     }
 
     override fun onDestroy() {
@@ -226,7 +228,24 @@ class SRAService : Service(), SensorEventListener {
     }
 
     fun skipSong() {
+        queueSong(chooseSong(cadence))
         mSpotifyAppRemote?.playerApi?.skipNext()
+    }
+
+    private fun playSong(song: Song?) {
+        if (song == null) {
+            Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
+            return
+        }
+        mSpotifyAppRemote?.playerApi?.play(song.uri)
+    }
+
+    private fun queueSong(song: Song?) {
+        if (song == null) {
+            Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
+            return
+        }
+        mSpotifyAppRemote?.playerApi?.queue(song.uri)
     }
 
     fun notifyPlaylistsChanged() {
@@ -277,6 +296,7 @@ class SRAService : Service(), SensorEventListener {
     }
 
     //TODO hlavni funkcionalita
+        //TODO na zacatku pustit nejakou generic
         //TODO zaradit pokud zmena bpm nebo jsem na konci songu (duration - progress v SDK api)
         //TODO vybrat song se spravnym bpm
         //TODO skip pripadne
