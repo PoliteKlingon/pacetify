@@ -202,6 +202,16 @@ class MainActivity : AppCompatActivity() {
                 super.onAvailable(network)
                 if (mAccessToken == null) requestToken()
             }
+
+            override fun onLost(network: Network) {
+                super.onLost(network)
+                mAccessToken = null
+            }
+
+            override fun onUnavailable() {
+                super.onUnavailable()
+                mAccessToken = null
+            }
         }
 
         binding = ActivityMainBinding.inflate(layoutInflater)

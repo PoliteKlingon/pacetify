@@ -68,7 +68,7 @@ class SRAService : Service(), SensorEventListener {
     private var rest = false
     private var restTime = 20
 
-    private var songs: List<Song> = listOf()
+    private var songs: Array<Song> = arrayOf()
 
     private var playerStateSubscription: Subscription<PlayerState>? = null
 
@@ -123,14 +123,13 @@ class SRAService : Service(), SensorEventListener {
                     mSpotifyAppRemote = spotifyAppRemote
                     Log.d("SRAService", "Connected! Yay!")
 
-                    // Now you can start interacting with App Remote
                     connected()
                 }
 
                 override fun onFailure(throwable: Throwable) {
                     Log.e("SRAService", throwable.message, throwable)
 
-                    // Something went wrong when attempting to connect! Handle errors here
+                    // TODO Something went wrong when attempting to connect! Handle errors here
                 }
             })
 
@@ -256,6 +255,24 @@ class SRAService : Service(), SensorEventListener {
         override fun run() {
             tick()
             mainHandler.postDelayed(this, 1000)
+        }
+    }
+
+    private fun chooseSong(bpm: Int): Song? {
+        if (songs.isEmpty()) return null
+        return binarySearchSong(bpm, 0, songs.size - 1)
+    }
+
+    private fun binarySearchSong(targetBpm: Int, start: Int, stop: Int): Song {
+        if (songs[start].bpm == targetBpm) return songs[start]
+        if (songs[stop].bpm == targetBpm) return songs[stop]
+        if (start >= stop) return songs[start]
+
+        val mid = (start + stop) / 2
+        return if (songs[mid].bpm < targetBpm) {
+            binarySearchSong(targetBpm, mid + 1, stop)
+        } else {
+            binarySearchSong(targetBpm, start, mid)
         }
     }
 
