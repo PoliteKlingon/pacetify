@@ -75,6 +75,7 @@ class SRAService : Service(), SensorEventListener {
     private var playerStateSubscription: Subscription<PlayerState>? = null
     private var timeToSongEnd: Long = 15
     private var timePlayedFromSong = 0
+    private var currentBpm = 0
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -155,7 +156,9 @@ class SRAService : Service(), SensorEventListener {
 
         //play first song
         playSong(chooseSong(140))
-        //TODO crossfade? no way to set it apparently
+        currentBpm = 140
+
+        //TODO enable crossfade? no way to set it apparently - alespon toast s vyzvou, aby to user udelal?
         }
 
     override fun onDestroy() {
@@ -203,40 +206,24 @@ class SRAService : Service(), SensorEventListener {
         cadencePreviousIdx = if (cadencePreviousIdx == cadencePreviousSize - 1) 0 else cadencePreviousIdx + 1
         val currentCadence = (totalSteps - stepsPrevious[stepsPreviousIdx]) * (60 / stepsPreviousSize) //convert to per minute
         stepsPrevious[stepsPreviousIdx] = totalSteps //store totalSteps into history
-        val cadenceBefore = cadencePrevious.average().toInt() //last cadence
         cadencePrevious[cadencePreviousIdx] = currentCadence //store cadence into history
 
         cadence = cadencePrevious.average().toInt()
 
         cadenceFlow.value = "Cadence: $cadence steps per minute"
-        /*homeTextFlow.value = "clock: " + seconds.toString() +
-                "\n totalSteps: " + totalSteps.toString() +
-                "\n stepsPrev[0]: " + stepsPrevious[0].toString() +
-                "\n stepsPrev[1]: " + stepsPrevious[1].toString() +
-                "\n stepsPrev[2]: " + stepsPrevious[2].toString() +
-                "\n stepsPrev[3]: " + stepsPrevious[3].toString() +
-                "\n stepsPrev[4]: " + stepsPrevious[4].toString() +
-                "\n cadencePrev[0]: " + cadencePrevious[0].toString() +
-                "\n cadencePrev[1]: " + cadencePrevious[1].toString() +
-                "\n cadencePrev[2]: " + cadencePrevious[2].toString() +
-                "\n cadencePrev[3]: " + cadencePrevious[3].toString() +
-                "\n cadencePrev[4]: " + cadencePrevious[4].toString() +
-                "\n cadencePrev[5]: " + cadencePrevious[5].toString() +
-                "\n cadencePrev[6]: " + cadencePrevious[6].toString() +
-                "\n cadencePrev[7]: " + cadencePrevious[7].toString() +
-                "\n cadencePrev[8]: " + cadencePrevious[8].toString() +
-                "\n cadencePrev[9]: " + cadencePrevious[9].toString()
-        songNameFlow.value = ""*/
 
         if (timeToSongEnd <= 10)
             queueSong(chooseSong(cadence + if (motivate) MOTIVATE_ADDITION else 0))
 
         timePlayedFromSong++
 
-        if (timePlayedFromSong > 10 && cadence + 5 >= cadenceBefore) { //TODO smarter way - more consistent speed increase leads to song change also compare with current bpm, not cadence before?
+        if (timePlayedFromSong > 10 && cadence + 5 >= currentBpm) { //TODO maybe some smarter way? - more consistent speed increase leads to song change
             skipSong()
             timePlayedFromSong = 0
         }
+
+        //TODO rest!
+        //TODO display something in homeText?
     }
 
     fun getFlows(): Array<MutableStateFlow<String>> {
@@ -262,6 +249,7 @@ class SRAService : Service(), SensorEventListener {
             return
         }
         mSpotifyAppRemote?.playerApi?.queue(song.uri)
+        currentBpm = song.bpm
     }
 
     fun notifyPlaylistsChanged() {
@@ -323,12 +311,4 @@ class SRAService : Service(), SensorEventListener {
             binarySearchSongIndex(targetBpm, start, mid)
         }
     }
-
-    //TODO hlavni funkcionalita
-        //TODO na zacatku pustit nejakou generic
-        //TODO zaradit pokud zmena bpm nebo jsem na konci songu (duration - progress v SDK api)
-        //TODO vybrat song se spravnym bpm
-        //TODO skip pripadne
-        //TODO asi to bude v ticku, ne? idk
-        //TODO fake crossfade pomoci hlasitosti?
 }
