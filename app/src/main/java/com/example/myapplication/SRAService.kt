@@ -13,24 +13,18 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
-import android.webkit.URLUtil
 import android.widget.Toast
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
 import com.spotify.protocol.client.Subscription
 import com.spotify.protocol.types.PlayerState
-import com.spotify.sdk.android.auth.AuthorizationClient
-import com.spotify.sdk.android.auth.AuthorizationRequest
-import com.spotify.sdk.android.auth.AuthorizationResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import okhttp3.*
-import org.json.JSONException
-import java.io.IOException
+import kotlin.math.abs
 import kotlin.random.Random
 
 
@@ -51,7 +45,6 @@ class SRAService : Service(), SensorEventListener {
     private var cadencePreviousSize = 10
 
     lateinit var mainHandler: Handler
-    private var seconds: Int = 0
 
     private var cadenceFlow = MutableStateFlow("")
     private var homeTextFlow = MutableStateFlow("")
@@ -68,7 +61,12 @@ class SRAService : Service(), SensorEventListener {
     private var motivate = false
     private var rest = false
     private var restTime = 20
-    private val MOTIVATE_ADDITION = 5 //bpm to add if user wants to be motivated
+    private val MOTIVATE_ADDITION = 5 // bpm to add if user wants to be motivated
+    private val RUNNING_THRESHOLD = 80 // lowest bpm that is considered to be running
+    private val SONG_MINIMAL_SECONDS = 10 // lowest amound of seconds to be played from a song before skipping
+    private var lastRunningBpm = 140 // used for rest functionality
+    private var currentRestingTime = restTime
+    private var currentlyResting = false
 
     private var songs: Array<Song> = arrayOf()
 
@@ -76,6 +74,7 @@ class SRAService : Service(), SensorEventListener {
     private var timeToSongEnd: Long = 15
     private var timePlayedFromSong = 0
     private var currentBpm = 0
+    private var currentSongUri = ""
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -156,7 +155,6 @@ class SRAService : Service(), SensorEventListener {
 
         //play first song
         playSong(chooseSong(140))
-        currentBpm = 140
 
         //TODO enable crossfade? no way to set it apparently - alespon toast s vyzvou, aby to user udelal?
         }
@@ -168,39 +166,17 @@ class SRAService : Service(), SensorEventListener {
         Log.d("SRAService", "disconnected from Spotify")
     }
 
-
-
-    /*override fun onResume() {
-        running = true
-        val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-
-        if (stepSensor == null) {
-            Toast.makeText(applicationContext, "No sensor detected on this device", Toast.LENGTH_LONG).show()
-        } else {
-            sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL) //TODO: jiny delay?
-        }
-
-        mainHandler.post(clock) // TODO: remove az to bude na pozadi
-    }*/
-
     override fun onSensorChanged(p0: SensorEvent?) {
-        if (running) {
+        if (running)
             totalSteps = p0!!.values[0]
-        }
     }
 
-    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
-    }
-
-    /*override fun onPause() {
-        mainHandler.removeCallbacks(clock) // TODO: remove az to bude na pozadi
-    }*/
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
 
     fun tick() {
         if (stepsPrevious[stepsPreviousIdx] < 1) {
             stepsPrevious = stepsPrevious.map { totalSteps }.toTypedArray()
         }
-        seconds++
 
         stepsPreviousIdx = if (stepsPreviousIdx == stepsPreviousSize - 1) 0 else stepsPreviousIdx + 1
         cadencePreviousIdx = if (cadencePreviousIdx == cadencePreviousSize - 1) 0 else cadencePreviousIdx + 1
@@ -210,20 +186,42 @@ class SRAService : Service(), SensorEventListener {
 
         cadence = cadencePrevious.average().toInt()
 
-        cadenceFlow.value = "Cadence: $cadence steps per minute"
+        if (cadence < RUNNING_THRESHOLD) lastRunningBpm = currentBpm
 
-        if (timeToSongEnd <= 10)
-            queueSong(chooseSong(cadence + if (motivate) MOTIVATE_ADDITION else 0))
+        cadenceFlow.value = "Cadence: $cadence steps per minute"
 
         timePlayedFromSong++
 
-        if (timePlayedFromSong > 10 && cadence + 5 >= currentBpm) { //TODO maybe some smarter way? - more consistent speed increase leads to song change
+        if (!currentlyResting
+            && cadence > RUNNING_THRESHOLD
+            && timePlayedFromSong > SONG_MINIMAL_SECONDS
+            && (abs(cadence - currentBpm) > 5)
+        ) //TODO maybe some smarter way? - more consistent speed increase leads to song change
             skipSong()
-            timePlayedFromSong = 0
+
+        if (timeToSongEnd <= 10)
+            queueSong()
+
+        if (rest && currentlyResting) currentRestingTime--
+
+        if (currentRestingTime < 0) {
+            skipSong()
+            currentlyResting = false
+            currentRestingTime = restTime
         }
 
-        //TODO rest!
         //TODO display something in homeText?
+    }
+
+    private fun calculateNextSongBpm(): Int {
+       if (cadence < RUNNING_THRESHOLD) {
+           if (rest && currentRestingTime > 0){
+               currentlyResting = true
+               return Random.nextInt(RUNNING_THRESHOLD - 30, RUNNING_THRESHOLD)
+           } else return lastRunningBpm
+       } else {
+           return cadence + if (motivate) MOTIVATE_ADDITION else 0
+       }
     }
 
     fun getFlows(): Array<MutableStateFlow<String>> {
@@ -231,8 +229,9 @@ class SRAService : Service(), SensorEventListener {
     }
 
     fun skipSong() {
-        queueSong(chooseSong(cadence + if (motivate) MOTIVATE_ADDITION else 0))
+        queueSong()
         mSpotifyAppRemote?.playerApi?.skipNext()
+        mSpotifyAppRemote?.playerApi?.seekToRelativePosition(1000 * 10) //TODO crossfade
     }
 
     private fun playSong(song: Song?) {
@@ -241,15 +240,26 @@ class SRAService : Service(), SensorEventListener {
             return
         }
         mSpotifyAppRemote?.playerApi?.play(song.uri)
+        currentSongUri = song.uri
+        currentBpm = song.bpm
     }
 
-    private fun queueSong(song: Song?) {
+    private fun queueSong() {
+        val nextBpm = calculateNextSongBpm()
+        val song = chooseSong(nextBpm)
+
         if (song == null) {
             Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
             return
         }
+
+        if (song.uri == currentSongUri) return // Do not play same song twice
+
         mSpotifyAppRemote?.playerApi?.queue(song.uri)
         currentBpm = song.bpm
+        currentSongUri = song.uri
+
+        timePlayedFromSong = 0
     }
 
     fun notifyPlaylistsChanged() {
