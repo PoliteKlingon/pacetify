@@ -31,6 +31,7 @@ import kotlinx.coroutines.launch
 import okhttp3.*
 import org.json.JSONException
 import java.io.IOException
+import kotlin.random.Random
 
 
 class SRAService : Service(), SensorEventListener {
@@ -67,10 +68,13 @@ class SRAService : Service(), SensorEventListener {
     private var motivate = false
     private var rest = false
     private var restTime = 20
+    private val MOTIVATE_ADDITION = 5 //bpm to add if user wants to be motivated
 
     private var songs: Array<Song> = arrayOf()
 
     private var playerStateSubscription: Subscription<PlayerState>? = null
+    private var timeToSongEnd: Long = 15
+    private var timePlayedFromSong = 0
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -133,7 +137,6 @@ class SRAService : Service(), SensorEventListener {
                 }
             })
 
-
         return START_REDELIVER_INTENT
     }
 
@@ -147,11 +150,13 @@ class SRAService : Service(), SensorEventListener {
             ?.setEventCallback { event ->
                 val track = event.track
                 songNameFlow.value = "${track.name}\n ${track.artist.name}\n ${track.album.name}"
+                timeToSongEnd = track.duration - event.playbackPosition
             }
 
         //play first song
         playSong(chooseSong(140))
-    }
+        //TODO crossfade? no way to set it apparently
+        }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -198,6 +203,7 @@ class SRAService : Service(), SensorEventListener {
         cadencePreviousIdx = if (cadencePreviousIdx == cadencePreviousSize - 1) 0 else cadencePreviousIdx + 1
         val currentCadence = (totalSteps - stepsPrevious[stepsPreviousIdx]) * (60 / stepsPreviousSize) //convert to per minute
         stepsPrevious[stepsPreviousIdx] = totalSteps //store totalSteps into history
+        val cadenceBefore = cadencePrevious.average().toInt() //last cadence
         cadencePrevious[cadencePreviousIdx] = currentCadence //store cadence into history
 
         cadence = cadencePrevious.average().toInt()
@@ -221,6 +227,16 @@ class SRAService : Service(), SensorEventListener {
                 "\n cadencePrev[8]: " + cadencePrevious[8].toString() +
                 "\n cadencePrev[9]: " + cadencePrevious[9].toString()
         songNameFlow.value = ""*/
+
+        if (timeToSongEnd <= 10)
+            queueSong(chooseSong(cadence + if (motivate) MOTIVATE_ADDITION else 0))
+
+        timePlayedFromSong++
+
+        if (timePlayedFromSong > 10 && cadence + 5 >= cadenceBefore) { //TODO smarter way - more consistent speed increase leads to song change also compare with current bpm, not cadence before?
+            skipSong()
+            timePlayedFromSong = 0
+        }
     }
 
     fun getFlows(): Array<MutableStateFlow<String>> {
@@ -228,7 +244,7 @@ class SRAService : Service(), SensorEventListener {
     }
 
     fun skipSong() {
-        queueSong(chooseSong(cadence))
+        queueSong(chooseSong(cadence + if (motivate) MOTIVATE_ADDITION else 0))
         mSpotifyAppRemote?.playerApi?.skipNext()
     }
 
@@ -279,19 +295,32 @@ class SRAService : Service(), SensorEventListener {
 
     private fun chooseSong(bpm: Int): Song? {
         if (songs.isEmpty()) return null
-        return binarySearchSong(bpm, 0, songs.size - 1)
+        val songIndex = binarySearchSongIndex(bpm, 0, songs.size - 1)
+        var startIndex = songIndex
+        var stopIndex = songIndex
+
+        // considering the supposed number of songs with the same index is small enough for
+        // the linear search to be faster on average than a binary search for both bounds
+        while (startIndex > 0 && songs[startIndex - 1].bpm == bpm) {
+            startIndex--
+        }
+        while (stopIndex < songs.size - 1 && songs[stopIndex + 1].bpm == bpm) {
+            stopIndex++
+        }
+
+        return songs[Random.nextInt(startIndex, stopIndex + 1)] //stop is exclusive
     }
 
-    private fun binarySearchSong(targetBpm: Int, start: Int, stop: Int): Song {
-        if (songs[start].bpm == targetBpm) return songs[start]
-        if (songs[stop].bpm == targetBpm) return songs[stop]
-        if (start >= stop) return songs[start]
+    private fun binarySearchSongIndex(targetBpm: Int, start: Int, stop: Int): Int {
+        if (songs[start].bpm == targetBpm) return start
+        if (songs[stop].bpm == targetBpm) return stop
+        if (start >= stop) return start
 
         val mid = (start + stop) / 2
         return if (songs[mid].bpm < targetBpm) {
-            binarySearchSong(targetBpm, mid + 1, stop)
+            binarySearchSongIndex(targetBpm, mid + 1, stop)
         } else {
-            binarySearchSong(targetBpm, start, mid)
+            binarySearchSongIndex(targetBpm, start, mid)
         }
     }
 
