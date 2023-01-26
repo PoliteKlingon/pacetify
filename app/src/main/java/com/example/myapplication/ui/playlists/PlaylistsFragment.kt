@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.dashboard
+package com.example.myapplication.ui.playlists
 
 import android.content.ComponentName
 import android.content.Intent
@@ -16,13 +16,13 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.example.myapplication.*
-import com.example.myapplication.databinding.FragmentDashboardBinding
+import com.example.myapplication.databinding.FragmentPlaylistsBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class DashboardFragment : Fragment() {
+class PlaylistsFragment : Fragment() {
 
-    private var _binding: FragmentDashboardBinding? = null
+    private var _binding: FragmentPlaylistsBinding? = null
 
     private var sraService: SRAService? = null
     private var serviceBound: Boolean = false
@@ -79,10 +79,10 @@ class DashboardFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val dashboardViewModel =
-            ViewModelProvider(this).get(DashboardViewModel::class.java)
+        val playlistsViewModel =
+            ViewModelProvider(this).get(PlaylistsViewModel::class.java)
 
-        _binding = FragmentDashboardBinding.inflate(inflater, container, false)
+        _binding = FragmentPlaylistsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         /*val textView: TextView = binding.textDashboard

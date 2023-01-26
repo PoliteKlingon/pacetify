@@ -152,7 +152,7 @@ class SRAService : Service(), SensorEventListener {
             }
 
         //play first song
-        playSong(chooseSong(140))
+        playSong(chooseSong(140)) //TODO into settings
         wasResting = true
 
         //TODO enable crossfade somehow?

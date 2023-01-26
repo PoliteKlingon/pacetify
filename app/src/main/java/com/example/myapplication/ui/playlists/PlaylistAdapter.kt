@@ -1,4 +1,4 @@
-package com.example.myapplication.ui.dashboard
+package com.example.myapplication.ui.playlists
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -7,7 +7,6 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.myapplication.MainActivity
 import com.example.myapplication.Playlist
 import com.example.myapplication.SRADao
-import com.example.myapplication.SRADatabase
 import com.example.myapplication.databinding.PlaylistBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
