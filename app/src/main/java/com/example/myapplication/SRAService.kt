@@ -1,6 +1,6 @@
 package com.example.myapplication
 
-import android.app.Service
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -9,12 +9,10 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.AudioManager
-import android.os.Binder
-import android.os.Handler
-import android.os.IBinder
-import android.os.Looper
+import android.os.*
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -88,6 +86,42 @@ class SRAService : Service(), SensorEventListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        // make service foreground so Android Oreo and higher does not kill it
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create the NotificationChannel
+            val mChannel = NotificationChannel("SRAChannel", "SRAChannel", NotificationManager.IMPORTANCE_LOW)
+            mChannel.description = "This is an SRA notification channel"
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
+
+
+            val pendingIntent: PendingIntent =
+                Intent(this, MainActivity::class.java).let { notificationIntent ->
+                    PendingIntent.getActivity(
+                        this, 0, notificationIntent,
+                        PendingIntent.FLAG_IMMUTABLE
+                    )
+                }
+
+            val notification: Notification =
+                Notification.Builder(this, /*CHANNEL_DEFAULT_IMPORTANCE*/"SRAChannel")
+                    .setContentTitle(/*getText(R.string.notification_title)*/"SRA")
+                    .setContentText(/*getText(R.string.notification_message)*/"desc here")
+                    /*.setSmallIcon(R.drawable.icon)*/
+                    .setContentIntent(pendingIntent)
+                    /*.setTicker(getText(R.string.ticker_text))*/
+                    .build()
+
+// Notification ID cannot be 0.
+            startForeground(1/*ONGOING_NOTIFICATION_ID*/, notification)
+        }
+
+
+
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
 
@@ -206,7 +240,7 @@ class SRAService : Service(), SensorEventListener {
         if (currentlyResting) currentRestingTime--
 
         // here come all the reasons why should a song be skipped
-        // we always deal with it in some manner, but it always leads to skipSong()
+        // we always deal with it in some manner, but it always leads to queueing a new song
         // and we only want that to happen once, therefore it is an "else if" scenario
 
         if (!isRunning() && !currentlyResting && !wasResting) stoppedRunning()
