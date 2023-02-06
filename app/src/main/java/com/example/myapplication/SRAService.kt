@@ -203,20 +203,25 @@ class SRAService : Service(), SensorEventListener {
         timePlayedFromSong++
         timeToSongEnd--
 
+        if (currentlyResting) currentRestingTime--
+
+        // here come all the reasons why should a song be skipped
+        // we always deal with it in some manner, but it always leads to skipSong()
+        // and we only want that to happen once, therefore it is an "else if" scenario
+
         if (!isRunning() && !currentlyResting && !wasResting) stoppedRunning()
 
-        if (isRunning() && currentlyResting) startedRunning()
+        else if (isRunning() && currentlyResting) startedRunning()
 
-        if (isRunning() && currentCadence > RUNNING_THRESHOLD
+        else if (isRunning() && currentCadence > RUNNING_THRESHOLD
             && timePlayedFromSong > SONG_MINIMAL_SECONDS
             && (abs(cadence - currentBpm) > 5)) //TODO maybe some smarter way? - more consistent speed increase leads to song change
             skipSong()
 
-        if (timeToSongEnd <= 10) queueSong()
+        else if (timeToSongEnd <= 10) queueSong()
 
-        if (currentlyResting) currentRestingTime--
-
-        if (currentRestingTime < 0) { // resting over
+        else if (currentRestingTime < 0) { // resting over
+            Log.d("SRAService", "resting over!")
             skipSong()
             currentlyResting = false
             wasResting = true
@@ -237,12 +242,14 @@ class SRAService : Service(), SensorEventListener {
     }
 
     private fun startedRunning() {
+        Log.d("SRAService", "started running")
         currentlyResting = false
         wasResting = true
         skipSong()
     }
 
     private fun stoppedRunning() {
+        Log.d("SRAService", "stopped running")
         currentlyResting = true
         currentRestingTime = restTime
         skipSong()
