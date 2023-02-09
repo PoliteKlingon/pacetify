@@ -133,10 +133,20 @@ class SRAService : Service(), SensorEventListener {
             notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager!!.createNotificationChannel(mChannel)
 
+            // this intent is for the notification to be able to open our app on click
+            val pendingIntent: PendingIntent =
+                Intent(this, MainActivity::class.java).let { notificationIntent ->
+                    PendingIntent.getActivity(
+                        this, 0, notificationIntent,
+                        PendingIntent.FLAG_IMMUTABLE
+                    )
+                }
+
             notification =
                 Notification.Builder(this,"SRAChannel")
                     .setContentTitle("Pacetify service is running")
                     .setContentText("Let's run!")
+                    .setContentIntent(pendingIntent)
                     .setSmallIcon(R.drawable.ic_launcher_foreground) //TODO change
 
             startForeground(1, notification!!.build())
