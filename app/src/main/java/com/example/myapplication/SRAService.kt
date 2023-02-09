@@ -209,11 +209,12 @@ class SRAService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        pauseSong()
         playerStateSubscription?.cancel()
         mainHandler.removeCallbacks(clock)
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
         Log.d("SRAService", "disconnected from Spotify")
-        stopForeground(STOP_FOREGROUND_DETACH)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) stopForeground(STOP_FOREGROUND_DETACH)
     }
 
     override fun onSensorChanged(p0: SensorEvent?) {
@@ -355,6 +356,10 @@ class SRAService : Service(), SensorEventListener {
 
         timePlayedFromSong = 0
         if (wasResting) wasResting = false
+    }
+
+    private fun pauseSong() {
+        mSpotifyAppRemote?.playerApi?.pause()
     }
 
     private fun crossfadeSkip() {
