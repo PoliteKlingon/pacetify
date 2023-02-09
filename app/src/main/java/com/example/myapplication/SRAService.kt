@@ -12,7 +12,6 @@ import android.media.AudioManager
 import android.os.*
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -30,10 +29,11 @@ class SRAService : Service(), SensorEventListener {
     private lateinit var sensorManager: SensorManager
     private lateinit var audioManager: AudioManager
 
-    private var running = false
+    private var stepSensorRunning = false
     private var totalSteps = 0f
 
-    private var cadence = 0
+    private var cadence = 0 // average from last couple of seconds
+    private var currentCadence = 0f // exact current cadence
 
     private lateinit var stepsPrevious: Array<Float>
     private var stepsPreviousIdx = 0
@@ -49,7 +49,7 @@ class SRAService : Service(), SensorEventListener {
     private var songNameFlow = MutableStateFlow("")
 
     private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
-    private val REDIRECT_URI = "com.example.myapplication://callback" //TODO??
+    private val REDIRECT_URI = "com.example.myapplication://callback"
     private var mSpotifyAppRemote: SpotifyAppRemote? = null
 
     private var dao: SRADao? = null
@@ -74,6 +74,8 @@ class SRAService : Service(), SensorEventListener {
     private var timeToSongEnd: Long = 15
     private var timePlayedFromSong = 0
     private var currentBpm = 0
+    private var notificationManager: NotificationManager? = null
+    private var notification: Notification.Builder? = null
 
     inner class SRABinder : Binder() {
         fun getService() = this@SRAService
@@ -87,40 +89,7 @@ class SRAService : Service(), SensorEventListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
-        // make service foreground so Android Oreo and higher does not kill it
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Create the NotificationChannel
-            val mChannel = NotificationChannel("SRAChannel", "SRAChannel", NotificationManager.IMPORTANCE_LOW)
-            mChannel.description = "This is an SRA notification channel"
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
-            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(mChannel)
-
-
-            val pendingIntent: PendingIntent =
-                Intent(this, MainActivity::class.java).let { notificationIntent ->
-                    PendingIntent.getActivity(
-                        this, 0, notificationIntent,
-                        PendingIntent.FLAG_IMMUTABLE
-                    )
-                }
-
-            val notification: Notification =
-                Notification.Builder(this, /*CHANNEL_DEFAULT_IMPORTANCE*/"SRAChannel")
-                    .setContentTitle(/*getText(R.string.notification_title)*/"SRA")
-                    .setContentText(/*getText(R.string.notification_message)*/"desc here")
-                    /*.setSmallIcon(R.drawable.icon)*/
-                    .setContentIntent(pendingIntent)
-                    /*.setTicker(getText(R.string.ticker_text))*/
-                    .build()
-
-// Notification ID cannot be 0.
-            startForeground(1/*ONGOING_NOTIFICATION_ID*/, notification)
-        }
-
-
+        makeServiceForeground()
 
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
@@ -128,16 +97,16 @@ class SRAService : Service(), SensorEventListener {
         stepsPrevious = Array(stepsPreviousSize) { 0f } //steps recorded for the last ten seconds
         cadencePrevious = Array(cadencePreviousSize) { 0f } //cadence recorded for the last ten seconds
 
-        mainHandler = Handler(Looper.getMainLooper())
+        mainHandler = Handler(Looper.getMainLooper()) // create a handler for our clock
 
-        running = true
         val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
-        Log.d("service", "onStartCommand")
+        Log.d("service", "SRA service started")
 
         if (stepSensor == null) {
             Toast.makeText(applicationContext, "No sensor detected on this device", Toast.LENGTH_LONG).show()
         } else {
+            stepSensorRunning = true
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
         }
 
@@ -147,7 +116,34 @@ class SRAService : Service(), SensorEventListener {
         sharedPref = this.getSharedPreferences("settings", Context.MODE_PRIVATE)
         loadSettings()
 
-        // SPOTIFY SDK:
+        connectToSpotifyAppRemote()
+
+        return START_REDELIVER_INTENT
+    }
+
+    private fun makeServiceForeground() {
+        // we have to do this so Android Oreo and higher does not kill the service
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create the NotificationChannel
+            val mChannel = NotificationChannel("SRAChannel", "SRAChannel", NotificationManager.IMPORTANCE_LOW)
+            mChannel.description = "This is an SRA notification channel"
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager!!.createNotificationChannel(mChannel)
+
+            notification =
+                Notification.Builder(this,"SRAChannel")
+                    .setContentTitle("Pacetify service is running")
+                    .setContentText("Let's run!")
+                    .setSmallIcon(R.drawable.ic_launcher_foreground) //TODO change
+
+            startForeground(1, notification!!.build())
+        }
+    }
+
+    private fun connectToSpotifyAppRemote() {
         // Set the connection parameters
         val connectionParams = ConnectionParams.Builder(CLIENT_ID)
             .setRedirectUri(REDIRECT_URI)
@@ -161,7 +157,7 @@ class SRAService : Service(), SensorEventListener {
                     mSpotifyAppRemote = spotifyAppRemote
                     Log.d("SRAService", "Connected!")
 
-                    connected()
+                    onSpotifyAppRemoteConnected()
                 }
 
                 override fun onFailure(throwable: Throwable) {
@@ -174,11 +170,9 @@ class SRAService : Service(), SensorEventListener {
                     ).show()
                 }
             })
-
-        return START_REDELIVER_INTENT
     }
 
-    fun connected() {
+    fun onSpotifyAppRemoteConnected() {
         //display current song
         playerStateSubscription = mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
             ?.setEventCallback { event ->
@@ -206,46 +200,59 @@ class SRAService : Service(), SensorEventListener {
     override fun onDestroy() {
         super.onDestroy()
         playerStateSubscription?.cancel()
+        mainHandler.removeCallbacks(clock)
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
         Log.d("SRAService", "disconnected from Spotify")
+        stopForeground(STOP_FOREGROUND_DETACH)
     }
 
     override fun onSensorChanged(p0: SensorEvent?) {
-        if (running)
+        if (stepSensorRunning)
             totalSteps = p0!!.values[0]
     }
 
     override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
 
-    fun tick() {
+    private fun calculateCadence() {
         if (stepsPrevious[stepsPreviousIdx] < 1) {
-            stepsPrevious = stepsPrevious.map { totalSteps }.toTypedArray()
+            stepsPrevious = stepsPrevious.map { totalSteps }.toTypedArray() // quicker start
         }
 
         stepsPreviousIdx = if (stepsPreviousIdx == stepsPreviousSize - 1) 0 else stepsPreviousIdx + 1
         cadencePreviousIdx = if (cadencePreviousIdx == cadencePreviousSize - 1) 0 else cadencePreviousIdx + 1
-        val currentCadence = (totalSteps - stepsPrevious[stepsPreviousIdx]) * (60 / stepsPreviousSize) //convert to per minute
+        currentCadence = (totalSteps - stepsPrevious[stepsPreviousIdx]) * (60 / stepsPreviousSize) //convert to per minute
         stepsPrevious[stepsPreviousIdx] = totalSteps //store totalSteps into history
         cadencePrevious[cadencePreviousIdx] = currentCadence //store cadence into history
 
         cadence = cadencePrevious.average().toInt()
+    }
+
+    private fun updateNotification() {
+        if (notification != null) {
+            notification!!.setContentText("Your pace is $cadence")
+            notificationManager?.notify(1, notification!!.build())
+        }
+    }
+
+    fun tick() {
+        calculateCadence()
+        cadenceFlow.value = "Cadence: $cadence steps per minute"
+
+        updateNotification()
 
         if (currentBpm > RUNNING_THRESHOLD) lastRunningBpm = currentBpm
 
-        cadenceFlow.value = "Cadence: $cadence steps per minute"
-
         timePlayedFromSong++
         timeToSongEnd--
-
         if (currentlyResting) currentRestingTime--
 
         // here come all the reasons why should a song be skipped
         // we always deal with it in some manner, but it always leads to queueing a new song
         // and we only want that to happen once, therefore it is an "else if" scenario
 
-        if (!isRunning() && !currentlyResting && !wasResting) stoppedRunning()
+        if (!isRunning() && !currentlyResting && !wasResting) onStoppedRunning()
 
-        else if (isRunning() && currentlyResting) startedRunning()
+        else if (isRunning() && currentlyResting) onStartedRunning()
 
         else if (isRunning() && currentCadence > RUNNING_THRESHOLD
             && timePlayedFromSong > SONG_MINIMAL_SECONDS
@@ -262,27 +269,31 @@ class SRAService : Service(), SensorEventListener {
             currentRestingTime = restTime
         }
 
+        updateHomeTextFlow()
+    }
+
+    private fun updateHomeTextFlow() {
         homeTextFlow.value =
-                "currentBpm: $currentBpm\n" +
-                "wasResting: $wasResting\n" +
-                "lastRunningBpm: $lastRunningBpm\n" +
-                "timePlayedFromSong: $timePlayedFromSong\n" +
-                "timeToSongEnd: $timeToSongEnd\n\n" +
-                if (currentlyResting) "Resting: $currentRestingTime s left" else ""
+            "currentBpm: $currentBpm\n" +
+                    "wasResting: $wasResting\n" +
+                    "lastRunningBpm: $lastRunningBpm\n" +
+                    "timePlayedFromSong: $timePlayedFromSong\n" +
+                    "timeToSongEnd: $timeToSongEnd\n\n" +
+                    if (currentlyResting) "Resting: $currentRestingTime s left" else ""
     }
 
     private fun isRunning(): Boolean {
         return cadence > RUNNING_THRESHOLD
     }
 
-    private fun startedRunning() {
+    private fun onStartedRunning() {
         Log.d("SRAService", "started running")
         currentlyResting = false
         wasResting = true
         skipSong()
     }
 
-    private fun stoppedRunning() {
+    private fun onStoppedRunning() {
         Log.d("SRAService", "stopped running")
         currentlyResting = true
         currentRestingTime = restTime
@@ -386,8 +397,8 @@ class SRAService : Service(), SensorEventListener {
 
     private val clock = object : Runnable {
         override fun run() {
-            tick()
             mainHandler.postDelayed(this, 1000)
+            tick()
         }
     }
 
