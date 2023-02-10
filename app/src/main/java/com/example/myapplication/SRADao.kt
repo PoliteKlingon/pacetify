@@ -32,6 +32,9 @@ interface SRADao {
     @Query("SELECT COUNT(*) FROM Song WHERE fromPlaylist = :playlistName")
     suspend fun getSongsNumInPlaylist(playlistName: String): Int
 
+    @Query("SELECT * FROM Song WHERE fromPlaylist = :playlistName ORDER BY name")
+    suspend fun getSongsFromPlaylist(playlistName: String): Array<Song>
+
     @Query("SELECT * FROM Playlist")
     suspend fun getPlaylists(): List<Playlist>
 
