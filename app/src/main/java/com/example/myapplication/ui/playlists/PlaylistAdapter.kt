@@ -38,14 +38,11 @@ class PlaylistAdapter(
                 val songNum = dao.getSongsNumInPlaylist(currentPlaylist.name)
                 tvPlaylistSongs.text = if (songNum == 0) "Empty or invalid playlist" else "$songNum songs imported"
             }
+
             btnDelete.setOnClickListener {
                 playlistURLs.remove(currentPlaylist)
                 this@PlaylistAdapter.notifyDataSetChanged()
                 lifecycleScope.launch {
-                    while (activity?.isNetworkBeingUsed() == true)
-                    {
-                        delay(1000)
-                    }
                     dao.deletePlaylist(currentPlaylist.name)
                 }
             }

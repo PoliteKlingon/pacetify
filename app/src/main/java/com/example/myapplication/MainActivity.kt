@@ -8,7 +8,6 @@ import android.net.ConnectivityManager.NetworkCallback
 import android.net.Network
 import android.os.Bundle
 import android.util.Log
-import android.widget.Toast
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -99,7 +98,7 @@ class MainActivity : AppCompatActivity() {
                     for (i in 0 until arr.length()) {
                         val item = arr.getJSONObject(i)
                         val songUri = item.getJSONObject("track").getString("uri")
-                        addSong(songUri, playlist.name)
+                        addSongWithName(songUri, playlist.name, true)
                     }
                 } catch (e: JSONException) {
                     Log.d("MainActivity","Failed to parse data: $e")
@@ -108,7 +107,37 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
-    private fun addSong(songUri: String, playlistName: String) {
+    fun addSongWithName(songUri: String, playlistName: String, isFromPlaylist: Boolean) {
+        val songId = songUri.takeLastWhile { ch -> ch != ':' }
+        val request: Request = Request.Builder()
+            .url("https://api.spotify.com/v1/tracks/$songId")
+            .addHeader("Authorization", "Bearer $mAccessToken")
+            .build()
+
+        mCall = mOkHttpClient.newCall(request)
+
+        mCall?.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("MainActivity","Failed to fetch data: $e")
+            }
+
+            @Throws(IOException::class)
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    val jsonObject = JSONObject(response.body!!.string())
+                    val songName = jsonObject.getString("name")
+                    val artistName = jsonObject.getJSONArray("artists").getJSONObject(0).getString("name")
+
+                    addSong(songUri, playlistName, songName, artistName, isFromPlaylist)
+
+                } catch (e: JSONException) {
+                    Log.d("MainActivity","Failed to parse data: $e") //we do not add songs with unknown bpm
+                }
+            }
+        })
+    }
+
+    private fun addSong(songUri: String, playlistName: String, songName: String, artistName: String, isFromPlaylist: Boolean) {
         val songId = songUri.takeLastWhile { ch -> ch != ':' }
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/audio-features/$songId")
@@ -128,8 +157,9 @@ class MainActivity : AppCompatActivity() {
                     val jsonObject = JSONObject(response.body!!.string())
                     val bpm = jsonObject.getString("tempo").takeWhile { ch -> ch != '.' }.toInt()
                     lifecycleScope.launch {
-                        val song = Song(songUri, bpm, playlistName)
-                        dao?.insertSong(song)
+                        val song = Song(songUri, songName, artistName, bpm, playlistName)
+                        if (isFromPlaylist) dao?.safeInsertSong(song)
+                        else                dao?.insertSong(song)
                         Log.d("MainActivity", "inserted song: $song")
                     }
                 } catch (e: JSONException) {
@@ -158,7 +188,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun isNetworkBeingUsed(): Boolean {
-        return mCall != null //TODO - tady asi prameni i problemy s random delkou - tem jednotnej mCall nezni moc ok
+        return mCall != null //TODO - this may cause the random playlist issues - a single mCall does not sound ok
     }
 
     @Deprecated("Deprecated in Java")
