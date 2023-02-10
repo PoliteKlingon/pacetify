@@ -33,11 +33,11 @@ class SongsFragment : Fragment() {
 
         songs = arrayOf()
 
-        binding.tvNoSongs.text = if (songs.isEmpty()) "No playlists yet" else ""
+        binding.tvNoSongs.text = if (songs.isEmpty()) "No songs yet" else ""
 
         class SongsAdapterDataObserver: RecyclerView.AdapterDataObserver() {
             override fun onChanged() {
-                binding.tvNoSongs.text = if (songs.isEmpty()) "No playlists yet" else ""
+                binding.tvNoSongs.text = if (songs.isEmpty()) "No songs yet" else ""
             }
         }
 
@@ -57,16 +57,16 @@ class SongsFragment : Fragment() {
             if (uri.isEmpty())
                 Toast.makeText(activity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (!Utils.isValidSpotifySongUri(uri))
-                Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
+                Toast.makeText(activity, "Invalid song URL", Toast.LENGTH_LONG).show()
             else if ((activity as MainActivity).isTokenAcquired() != true) //is null or false
-                Toast.makeText(activity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
+                Toast.makeText(activity, "Please connect to the internet to add a song", Toast.LENGTH_LONG).show()
             else {
                 var id = uri.takeLastWhile { ch -> ch != '/' }
                 if (id.contains('?')) {
                     id = id.takeWhile { ch -> ch != '?' }
                 }
 
-                (activity as MainActivity).addSongWithName(uri, "", false)
+                (activity as MainActivity).addSongWithName(id, "", false)
 
                 lifecycleScope.launch {
                     songs = dao.getSongsWithDuplicates()

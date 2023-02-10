@@ -1,6 +1,7 @@
 package com.example.myapplication.ui.playlists
 
 import android.content.ComponentName
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
@@ -112,7 +113,7 @@ class PlaylistsFragment : Fragment() {
             adapter.notifyDataSetChanged()
         }
 
-        binding.btnAddPlaylist.setOnClickListener {
+        /*binding.btnAddPlaylist.setOnClickListener {
             val name = binding.etNewPlaylistName.text.toString()
             val uri = binding.etNewPlaylistUri.text.toString()
 
@@ -148,6 +149,18 @@ class PlaylistsFragment : Fragment() {
                 }
 
                 insertedPlaylist(adapter)
+            }
+        }*/
+
+        binding.fabAddPlaylist.setOnClickListener {
+            AddPlaylistDialog(
+                activity!!, playlists, dao, adapter, serviceBound, sraService, lifecycle
+            ).apply {
+                setOnDismissListener{
+                    insertedPlaylist(adapter)
+                    binding.tvNoPlaylists.text = ""
+                }
+                show()
             }
         }
 
