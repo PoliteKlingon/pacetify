@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myapplication.*
 import com.example.myapplication.databinding.DialogFragmentSongsBinding
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SongsDialogFragment(
@@ -63,6 +64,7 @@ class SongsDialogFragment(
                 setOnDismissListener{
                     songs.removeAll { true }
                     lifecycleScope.launch {
+                        delay(1000) // Wait for the song to load
                         songs.addAll(dao.getSongsFromPlaylist(playlistName))
                         adapter.notifyDataSetChanged()
                         binding.tvNoSongs.text = ""
