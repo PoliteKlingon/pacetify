@@ -1,7 +1,9 @@
 package com.example.myapplication.ui.playlists
 
+import android.content.DialogInterface
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.RecyclerView
 import com.example.myapplication.MainActivity
@@ -40,11 +42,21 @@ class PlaylistAdapter(
             }
 
             btnDelete.setOnClickListener {
-                playlistURLs.remove(currentPlaylist)
-                this@PlaylistAdapter.notifyDataSetChanged()
-                lifecycleScope.launch {
-                    dao.deletePlaylist(currentPlaylist.name)
-                }
+                AlertDialog.Builder(activity!!)
+                    .setTitle("Are you sure?")
+                    .setMessage("Do you want to delete \"${currentPlaylist.name}\"?")
+                    .setNegativeButton("Cancel") { dialog, _ ->
+                        dialog.dismiss()
+                    }
+                    .setPositiveButton("Delete")  { dialog, _ ->
+                        playlistURLs.remove(currentPlaylist)
+                        this@PlaylistAdapter.notifyDataSetChanged()
+                        lifecycleScope.launch {
+                            dao.deletePlaylist(currentPlaylist.name)
+                        }
+                        dialog.dismiss()
+                    }
+                    .show()
             }
         }
     }
