@@ -9,7 +9,7 @@ import com.example.pacetify.data.Song
 
 @Database(entities = [Playlist::class, Song::class], version = 1)
 abstract class PacetifyDatabase :RoomDatabase() {
-    abstract val PacetifyDao: PacetifyDao
+    abstract val pacetifyDao: PacetifyDao
 
     companion object {
         @Volatile

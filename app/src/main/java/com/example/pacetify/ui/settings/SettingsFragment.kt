@@ -14,6 +14,7 @@ import android.widget.SeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.example.pacetify.data.PacetifyService
+import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.example.pacetify.databinding.FragmentSettingsBinding
 
 class SettingsFragment : Fragment() {
@@ -69,6 +70,14 @@ class SettingsFragment : Fragment() {
         if (serviceBound) unbindService()
     }
 
+    private fun sliderProgressToTime(progress: Int): Int {
+        return (progress + 1) * 10
+    }
+
+    private fun timeToSliderProgress(time: Int): Int {
+        return (time / 10) - 1
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -85,22 +94,20 @@ class SettingsFragment : Fragment() {
             textView.text = it
         }*/
 
-        val sharedPref = activity!!.getSharedPreferences("settings", Context.MODE_PRIVATE)
-        val prefEditor = sharedPref.edit()
+        val settingsFile = SettingsPreferenceFile.getInstance(activity!!)
 
-        binding.swMotivate.isChecked = sharedPref.getBoolean("motivate", true)
-        binding.swRest.isChecked = sharedPref.getBoolean("rest", true)
-        binding.sbRest.progress = sharedPref.getInt("progress", 1)
+        binding.swMotivate.isChecked = settingsFile.motivate
+        binding.swRest.isChecked = settingsFile.rest
+        binding.sbRest.progress = timeToSliderProgress(settingsFile.restTime)
         binding.sbRest.isEnabled = binding.swRest.isChecked
-        binding.tvRest.text = "Maximal resting time: " + ((binding.sbRest.progress + 1) * 10) + " s"
+        binding.tvRest.text = "Maximal resting time: " + settingsFile.restTime + " s"
 
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val curRestTime = (progress + 1) * 10
+                val curRestTime = sliderProgressToTime(progress)
                 binding.tvRest.text = "Maximal resting time: $curRestTime s"
 
-                prefEditor.putInt("progress", progress)
-                prefEditor.apply()
+                settingsFile.restTime = curRestTime
                 if (serviceBound) pacetifyService?.notifySettingsChanged()
             }
 
@@ -110,14 +117,12 @@ class SettingsFragment : Fragment() {
         })
 
         binding.swMotivate.setOnClickListener {
-            prefEditor.putBoolean("motivate", binding.swMotivate.isChecked)
-            prefEditor.apply()
+            settingsFile.motivate = binding.swMotivate.isChecked
             if (serviceBound) pacetifyService?.notifySettingsChanged()
         }
 
         binding.swRest.setOnClickListener {
-            prefEditor.putBoolean("rest", binding.swRest.isChecked)
-            prefEditor.apply()
+            settingsFile.rest = binding.swRest.isChecked
             binding.sbRest.isEnabled = binding.swRest.isChecked
             if (serviceBound) pacetifyService?.notifySettingsChanged()
         }

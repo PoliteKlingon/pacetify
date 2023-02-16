@@ -212,7 +212,7 @@ class MainActivity : AppCompatActivity() {
 
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
 
-        if (dao == null) dao = PacetifyDatabase.getInstance(this).PacetifyDao
+        if (dao == null) dao = PacetifyDatabase.getInstance(this).pacetifyDao
     }
 
     override fun onPause() {

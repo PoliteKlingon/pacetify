@@ -39,7 +39,7 @@ class SongsDialogFragment(
         _binding = DialogFragmentSongsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val dao = PacetifyDatabase.getInstance(activity!!).PacetifyDao
+        val dao = PacetifyDatabase.getInstance(activity!!).pacetifyDao
 
         songs = mutableListOf()
 

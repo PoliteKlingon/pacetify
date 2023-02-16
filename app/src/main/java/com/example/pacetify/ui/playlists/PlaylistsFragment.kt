@@ -92,7 +92,7 @@ class PlaylistsFragment : Fragment() {
             textView.text = it
         }*/
 
-        val dao = PacetifyDatabase.getInstance(activity!!).PacetifyDao
+        val dao = PacetifyDatabase.getInstance(activity!!).pacetifyDao
 
         playlists = mutableListOf()
 

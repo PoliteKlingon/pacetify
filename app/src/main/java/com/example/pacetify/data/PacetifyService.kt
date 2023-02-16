@@ -16,6 +16,7 @@ import com.example.pacetify.MainActivity
 import com.example.pacetify.R
 import com.example.pacetify.data.source.database.PacetifyDao
 import com.example.pacetify.data.source.database.PacetifyDatabase
+import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.spotify.android.appremote.api.ConnectionParams
 import com.spotify.android.appremote.api.Connector
 import com.spotify.android.appremote.api.SpotifyAppRemote
@@ -57,7 +58,7 @@ class PacetifyService : Service(), SensorEventListener {
     private var mSpotifyAppRemote: SpotifyAppRemote? = null
 
     private var dao: PacetifyDao? = null
-    private var sharedPref: SharedPreferences? = null
+    private var settingsFile: SettingsPreferenceFile? = null
 
     private var motivate = false
     private var rest = false
@@ -114,10 +115,10 @@ class PacetifyService : Service(), SensorEventListener {
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
         }
 
-        dao = PacetifyDatabase.getInstance(this).PacetifyDao
+        dao = PacetifyDatabase.getInstance(this).pacetifyDao
         loadSongs()
 
-        sharedPref = this.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        settingsFile = SettingsPreferenceFile.getInstance(this)
         loadSettings()
 
         connectToSpotifyAppRemote()
@@ -400,10 +401,10 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     private fun loadSettings() {
-        if (sharedPref != null) {
-            motivate = sharedPref!!.getBoolean("motivate", false)
-            rest = sharedPref!!.getBoolean("rest", false)
-            restTime = (sharedPref!!.getInt("progress", 20) + 1) * 10
+        if (settingsFile != null) {
+            motivate = settingsFile!!.motivate
+            rest = settingsFile!!.rest
+            restTime = settingsFile!!.restTime
             currentRestingTime = restTime
         }
     }
