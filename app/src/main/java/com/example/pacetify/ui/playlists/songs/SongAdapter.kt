@@ -53,6 +53,11 @@ class SongAdapter(
                     }
                     .show()
             }
+
+            // Play the song on tap
+            songView.setOnClickListener {
+                activity?.pacetifyService?.playSong(currentSong)
+            }
         }
     }
 

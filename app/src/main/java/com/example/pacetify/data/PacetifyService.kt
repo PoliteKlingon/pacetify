@@ -3,7 +3,6 @@ package com.example.pacetify.data
 import android.app.*
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -82,6 +81,8 @@ class PacetifyService : Service(), SensorEventListener {
     private var notificationManager: NotificationManager? = null
     private var notification: Notification.Builder? = null
 
+    private var shouldStartPlaying = true
+
     inner class PacetifyBinder : Binder() {
         fun getService() = this@PacetifyService
     }
@@ -92,9 +93,19 @@ class PacetifyService : Service(), SensorEventListener {
         return binder
     }
 
+    fun startTicking() {
+        mainHandler.post(clock)
+    }
+
+    fun stopTicking() {
+        mainHandler.removeCallbacks(clock)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         makeServiceForeground()
+
+        shouldStartPlaying = intent?.getBooleanExtra("tick", true) ?: true
 
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
@@ -196,27 +207,29 @@ class PacetifyService : Service(), SensorEventListener {
                 timeToSongEnd = (track.duration - event.playbackPosition) / 1000
             }
 
-        //play first song
-        playSong(chooseSong(INITIAL_CADENCE))
-        wasResting = true
+        if (shouldStartPlaying) {
+            //play first song
+            playSong(chooseSong(INITIAL_CADENCE))
+            wasResting = true
 
-        mSpotifyAppRemote?.playerApi?.crossfadeState?.setResultCallback {
-                ev -> if (!ev.isEnabled)
+            mSpotifyAppRemote?.playerApi?.crossfadeState?.setResultCallback { ev ->
+                if (!ev.isEnabled)
                     Toast.makeText(
                         applicationContext,
                         "Enabling crossfade in spotify settings leads to better experience",
                         Toast.LENGTH_LONG
                     ).show()
-        }
+            }
 
-        mainHandler.post(clock) //start ticking
+            startTicking()
         }
+    }
 
     override fun onDestroy() {
         super.onDestroy()
         pauseSong()
         playerStateSubscription?.cancel()
-        mainHandler.removeCallbacks(clock)
+        stopTicking()
         SpotifyAppRemote.disconnect(mSpotifyAppRemote);
         Log.d("PacetifyService", "disconnected from Spotify")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) stopForeground(STOP_FOREGROUND_DETACH)
@@ -335,7 +348,7 @@ class PacetifyService : Service(), SensorEventListener {
         crossfadeSkip()
     }
 
-    private fun playSong(song: Song?) {
+    fun playSong(song: Song?) {
         if (song == null) {
             Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
             return

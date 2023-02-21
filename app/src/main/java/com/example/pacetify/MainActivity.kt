@@ -266,6 +266,19 @@ class MainActivity : AppCompatActivity() {
         cancelCall()
     }
 
+    fun startService(tick: Boolean = true) {
+        Intent(this, PacetifyService::class.java).also {
+            it.putExtra("tick", tick)
+            this.startService(it)
+        }
+    }
+
+    fun stopService() {
+        Intent(this, PacetifyService::class.java).also {
+            this.stopService(it)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

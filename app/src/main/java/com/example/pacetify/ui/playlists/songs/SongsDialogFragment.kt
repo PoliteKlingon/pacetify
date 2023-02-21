@@ -28,6 +28,8 @@ class SongsDialogFragment(
     private val binding get() = _binding!!
     private lateinit var songs: MutableList<Song>
 
+    private lateinit var mainActivity: MainActivity
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -79,12 +81,25 @@ class SongsDialogFragment(
             }
         }
 
-        //TODO to enable playing the songs on tap:
-        //TODO if servicebound, unbind and stpo the service
-        //TODO connect to remote
-        //TODO add id to the song xml, add onclicklistener with mremote.play to the id
+        // Enabling playing the songs on tap:
+        // First we stop the service clock ticking so we can play individual songs
+        mainActivity = requireActivity() as MainActivity
+        if (!mainActivity.serviceBound) {
+            // If the service is not running, we want to start it to be able to use it
+            mainActivity.startService(tick = false) //we do not want the service to start the clock
+            mainActivity.bindService()
+        } else {
+            mainActivity.pacetifyService?.stopTicking()
+        }
 
         return root
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // If the service exists - it should - then start the clock again
+        if (mainActivity.serviceBound)
+            mainActivity.pacetifyService?.startTicking()
     }
 
     override fun onResume() {

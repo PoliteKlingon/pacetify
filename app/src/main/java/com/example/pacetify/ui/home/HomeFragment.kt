@@ -51,24 +51,42 @@ class HomeFragment : Fragment() {
             songNameFlow = flows[2]
         }
 
+        if (cadenceFlow == null || homeTextFlow == null || songNameFlow == null) {
+            Log.w("HomeFragment", "Some of the service's flows are null, aborting...")
+            return
+        }
+
         Log.d("HomeFragment", "service connected")
 
-        cadenceFlowObserver = lifecycleScope.launchWhenStarted {
-            cadenceFlow?.collectLatest {
-                binding.displayCadence.text = it
-                Log.d("HomeFragment", "cadence updated")
+        binding.textHome.text = homeTextFlow?.value
+        binding.displayCadence.text = cadenceFlow?.value
+        binding.displaySong.text = songNameFlow?.value
+
+        if (cadenceFlowObserver == null) {
+            Log.d("asd", "ASD")
+            cadenceFlowObserver = lifecycleScope.launchWhenStarted {
+                cadenceFlow?.collectLatest {
+                    binding.displayCadence.text = it
+                    Log.d("HomeFragment", "cadence updated")
+                }
             }
         }
-        homeTextFlowObserver = lifecycleScope.launchWhenStarted {
-            homeTextFlow?.collectLatest {
-                binding.textHome.text = it
-                Log.d("HomeFragment", "hometext updated")
+
+        if (homeTextFlowObserver == null) {
+            homeTextFlowObserver = lifecycleScope.launchWhenStarted {
+                homeTextFlow?.collectLatest {
+                    binding.textHome.text = it
+                    Log.d("HomeFragment", "hometext updated")
+                }
             }
         }
-        songNameFlowObserver = lifecycleScope.launchWhenStarted {
-            songNameFlow?.collectLatest {
-                binding.displaySong.text = it
-                Log.d("HomeFragment", "songname updated")
+
+        if (songNameFlowObserver == null) {
+            songNameFlowObserver = lifecycleScope.launchWhenStarted {
+                songNameFlow?.collectLatest {
+                    binding.displaySong.text = it
+                    Log.d("HomeFragment", "songname updated")
+                }
             }
         }
 
@@ -146,13 +164,9 @@ class HomeFragment : Fragment() {
         binding.onOff.setOnClickListener {
             if (mainActivity.serviceBound) {
                 mainActivity.unbindService()
-                Intent(requireActivity(), PacetifyService::class.java).also {
-                    requireActivity().stopService(it)
-                }
+                mainActivity.stopService()
             } else {
-                Intent(requireActivity(), PacetifyService::class.java).also {
-                    requireActivity().startService(it)
-                }
+                mainActivity.startService()
                 mainActivity.bindService()
             }
         }
@@ -181,5 +195,19 @@ class HomeFragment : Fragment() {
         ) requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
 
         return root
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (mainActivity.serviceBound) {
+            onServiceConnected()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (mainActivity.serviceBound) {
+            onServiceDisconnected()
+        }
     }
 }
