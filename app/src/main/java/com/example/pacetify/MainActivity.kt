@@ -1,5 +1,6 @@
 package com.example.pacetify
 
+import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -10,6 +11,8 @@ import android.net.Network
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -39,7 +42,7 @@ class MainActivity : AppCompatActivity() {
 
     private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
     private val REDIRECT_URI = "com.example.pacetify://callback" //TODO??
-    private val AUTH_TOKEN_REQUEST_CODE = 0x10
+    //private val AUTH_TOKEN_REQUEST_CODE = 0x10
 
     private val mOkHttpClient = OkHttpClient()
     private var mAccessToken: String? = null
@@ -54,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     var serviceBound: Boolean = false
 
     lateinit var serviceBoundFlow: MutableStateFlow<Boolean>
+
+    private lateinit var resultLauncher: ActivityResultLauncher<Intent>
 
     private val connection = object : ServiceConnection {
 
@@ -221,11 +226,9 @@ class MainActivity : AppCompatActivity() {
                 .setScopes(arrayOf()) //we do not need any special scopes
                 .setCampaign("") //no campaign needed
                 .build()
-        AuthorizationClient.openLoginActivity(
-            this,
-            AUTH_TOKEN_REQUEST_CODE,
-            request
-        )
+
+        val authIntent = AuthorizationClient.createLoginActivityIntent(this, request)
+        resultLauncher.launch(authIntent)
     }
 
     fun isTokenAcquired(): Boolean {
@@ -234,20 +237,6 @@ class MainActivity : AppCompatActivity() {
 
     fun isNetworkBeingUsed(): Boolean {
         return mCall != null //TODO - this may cause the random playlist issues - a single mCall does not sound ok
-    }
-
-    // In spite of being deprecated, this method continues to be the recommended method by Spotify
-    @Deprecated("Deprecated in Java")
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        val response = AuthorizationClient.getResponse(resultCode, data)
-        if (response.error != null && response.error.isNotEmpty()) {
-            Log.d("Main", response.error)
-        }
-        if (requestCode == AUTH_TOKEN_REQUEST_CODE) {
-            mAccessToken = response.accessToken
-            Log.d("Main", mAccessToken.toString())
-        }
     }
 
     override fun onResume() {
@@ -285,6 +274,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data: Intent? = result.data
+                val response = AuthorizationClient.getResponse(result.resultCode, data)
+
+                if (response.error != null && response.error.isNotEmpty()) {
+                    Log.d("Main", response.error)
+                } else {
+                    mAccessToken = response.accessToken
+                    Log.d("Main", "Access token: ${mAccessToken.toString()}")
+                }
+            }
+        }
 
         serviceBoundFlow = MutableStateFlow(false)
 
