@@ -19,13 +19,6 @@ import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.source.spotify.WebApi
 import com.example.pacetify.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.MutableStateFlow
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.Request
-import okhttp3.Response
-import org.json.JSONException
-import org.json.JSONObject
-import java.io.IOException
 
 class MainActivity : AppCompatActivity() {
 
