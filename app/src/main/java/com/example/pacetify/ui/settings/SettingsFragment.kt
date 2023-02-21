@@ -1,19 +1,13 @@
 package com.example.pacetify.ui.settings
 
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
-import android.os.IBinder
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.example.pacetify.data.PacetifyService
+import com.example.pacetify.MainActivity
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.example.pacetify.databinding.FragmentSettingsBinding
 
@@ -25,49 +19,9 @@ class SettingsFragment : Fragment() {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private var pacetifyService: PacetifyService? = null
-    private var serviceBound: Boolean = false
-
-    private val connection = object : ServiceConnection {
-
-        override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            val binder = service as PacetifyService.PacetifyBinder
-            pacetifyService = binder.getService()
-            serviceBound = true
-
-            Log.d("NotificationsFragment", "service connected")
-        }
-
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            serviceBound = false
-        }
-    }
-
-    private fun bindService() {
-        Intent(activity!!, PacetifyService::class.java).also { intent ->
-            activity!!.bindService(intent, connection, 0)
-        }
-    }
-
-    private fun unbindService() {
-        activity!!.unbindService(connection)
-        serviceBound = false
-    }
-
     override fun onDestroyView() {
         super.onDestroyView()
-        if (serviceBound) unbindService()
         _binding = null
-    }
-
-    override fun onResume() {
-        super.onResume()
-        bindService()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (serviceBound) unbindService()
     }
 
     private fun sliderProgressToTime(progress: Int): Int {
@@ -89,12 +43,14 @@ class SettingsFragment : Fragment() {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
+        val mainActivity = requireActivity() as MainActivity
+
         /*val textView: TextView = binding.textNotifications
         notificationsViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }*/
 
-        val settingsFile = SettingsPreferenceFile.getInstance(activity!!)
+        val settingsFile = SettingsPreferenceFile.getInstance(mainActivity)
 
         binding.swMotivate.isChecked = settingsFile.motivate
         binding.swRest.isChecked = settingsFile.rest
@@ -108,7 +64,8 @@ class SettingsFragment : Fragment() {
                 binding.tvRest.text = "Maximal resting time: $curRestTime s"
 
                 settingsFile.restTime = curRestTime
-                if (serviceBound) pacetifyService?.notifySettingsChanged()
+                if (mainActivity.serviceBound)
+                        mainActivity.pacetifyService?.notifySettingsChanged()
             }
 
             override fun onStartTrackingTouch(p0: SeekBar?) {}
@@ -118,13 +75,15 @@ class SettingsFragment : Fragment() {
 
         binding.swMotivate.setOnClickListener {
             settingsFile.motivate = binding.swMotivate.isChecked
-            if (serviceBound) pacetifyService?.notifySettingsChanged()
+            if (mainActivity.serviceBound)
+                mainActivity.pacetifyService?.notifySettingsChanged()
         }
 
         binding.swRest.setOnClickListener {
             settingsFile.rest = binding.swRest.isChecked
             binding.sbRest.isEnabled = binding.swRest.isChecked
-            if (serviceBound) pacetifyService?.notifySettingsChanged()
+            if (mainActivity.serviceBound)
+                mainActivity.pacetifyService?.notifySettingsChanged()
         }
 
         return root

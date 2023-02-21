@@ -39,7 +39,7 @@ class SongsDialogFragment(
         _binding = DialogFragmentSongsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val dao = PacetifyDatabase.getInstance(activity!!).pacetifyDao
+        val dao = PacetifyDatabase.getInstance(requireActivity()).pacetifyDao
 
         songs = mutableListOf()
 
@@ -63,7 +63,7 @@ class SongsDialogFragment(
 
         binding.fabAddSong.setOnClickListener {
             AddSongDialog(
-                activity!!, songs, dao, lifecycle, playlistName
+                requireActivity(), songs, dao, lifecycle, playlistName
             ).apply {
                 setOnDismissListener{
                     songs.removeAll { true }

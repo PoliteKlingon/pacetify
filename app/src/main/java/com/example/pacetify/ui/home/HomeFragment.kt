@@ -1,12 +1,9 @@
 package com.example.pacetify.ui.home
 
 import android.Manifest
-import android.content.ComponentName
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.IBinder
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import com.example.pacetify.MainActivity
 import com.example.pacetify.data.PacetifyService
 import com.example.pacetify.databinding.FragmentHomeBinding
 import kotlinx.coroutines.Job
@@ -29,9 +27,6 @@ class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
 
-    private var pacetifyService: PacetifyService? = null
-    private var serviceBound: Boolean = false
-
     private var cadenceFlow: MutableStateFlow<String>? = null
     private var homeTextFlow: MutableStateFlow<String>? = null
     private var songNameFlow: MutableStateFlow<String>? = null
@@ -40,72 +35,53 @@ class HomeFragment : Fragment() {
     private var homeTextFlowObserver: Job? = null
     private var songNameFlowObserver: Job? = null
 
-    private val connection = object : ServiceConnection {
+    private lateinit var mainActivity: MainActivity
+    private var serviceBoundFlowObserver: Job? = null
 
-        override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            val binder = service as PacetifyService.PacetifyBinder
-            pacetifyService = binder.getService()
-            serviceBound = true
-            binding.onOff.text = "ON"
+    fun onServiceConnected() {
+        binding.onOff.text = "ON"
 
-            if (pacetifyService == null) {
-                return
-            }
-            val flows = pacetifyService?.getFlows()
-            if (flows != null) {
-                cadenceFlow = flows[0]
-                homeTextFlow = flows[1]
-                songNameFlow = flows[2]
-            }
+        if (mainActivity.pacetifyService == null) {
+            return
+        }
+        val flows = mainActivity.pacetifyService?.getFlows()
+        if (flows != null) {
+            cadenceFlow = flows[0]
+            homeTextFlow = flows[1]
+            songNameFlow = flows[2]
+        }
 
-            Log.d("HomeFragment", "service connected")
+        Log.d("HomeFragment", "service connected")
 
-            cadenceFlowObserver = lifecycleScope.launchWhenStarted {
-                cadenceFlow?.collectLatest {
-                    binding.displayCadence.text = it
-                    Log.d("HomeFragment", "cadence updated")
-                }
+        cadenceFlowObserver = lifecycleScope.launchWhenStarted {
+            cadenceFlow?.collectLatest {
+                binding.displayCadence.text = it
+                Log.d("HomeFragment", "cadence updated")
             }
-            homeTextFlowObserver = lifecycleScope.launchWhenStarted {
-                homeTextFlow?.collectLatest {
-                    binding.textHome.text = it
-                    Log.d("HomeFragment", "hometext updated")
-                }
+        }
+        homeTextFlowObserver = lifecycleScope.launchWhenStarted {
+            homeTextFlow?.collectLatest {
+                binding.textHome.text = it
+                Log.d("HomeFragment", "hometext updated")
             }
-            songNameFlowObserver = lifecycleScope.launchWhenStarted {
+        }
+        songNameFlowObserver = lifecycleScope.launchWhenStarted {
             songNameFlow?.collectLatest {
-                    binding.displaySong.text = it
-                    Log.d("HomeFragment", "songname updated")
-                }
+                binding.displaySong.text = it
+                Log.d("HomeFragment", "songname updated")
             }
-
-            binding.skipSong.isEnabled = serviceBound
         }
 
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            serviceBound = false
-            binding.onOff.text = "OFF"
-            cadenceFlowObserver?.cancel(CancellationException())
-            homeTextFlowObserver?.cancel(CancellationException())
-            songNameFlowObserver?.cancel(CancellationException())
-        }
+        binding.skipSong.isEnabled = mainActivity.serviceBound
     }
 
-    private fun bindService() {
-        Intent(activity!!, PacetifyService::class.java).also { intent ->
-            activity!!.bindService(intent, connection, 0)
-        }
-    }
-
-    private fun unbindService() {
-        activity!!.unbindService(connection)
-        serviceBound = false
+    private fun onServiceDisconnected() {
         binding.onOff.text = "OFF"
 
         binding.displayCadence.text = "You have to start the Service first"
         binding.textHome.text = ""
         binding.displaySong.text = ""
-        binding.skipSong.isEnabled = serviceBound
+        binding.skipSong.isEnabled = mainActivity.serviceBound
 
         cadenceFlow = null
         homeTextFlow = null
@@ -121,7 +97,9 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        if (serviceBound) unbindService()
+        //if (serviceBound) unbindService()
+        onServiceDisconnected()
+        serviceBoundFlowObserver?.cancel(CancellationException())
         _binding = null
     }
 
@@ -140,34 +118,42 @@ class HomeFragment : Fragment() {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        bindService()
+        mainActivity = requireActivity() as MainActivity
+
+        serviceBoundFlowObserver = lifecycleScope.launchWhenStarted {
+            mainActivity.serviceBoundFlow.collectLatest {
+                if (it) onServiceConnected() else onServiceDisconnected()
+            }
+        }
+
+        //bindService()
 
         val textView: TextView = binding.textHome
         homeViewModel.text.observe(viewLifecycleOwner) {
             textView.text = /*it*/ "Spotify Running App"
         }
 
-        binding.skipSong.isEnabled = serviceBound
+        binding.skipSong.isEnabled = mainActivity.serviceBound
 
         binding.skipSong.setOnClickListener {
-            if (serviceBound) {
-                pacetifyService?.skipSong()
+            if (mainActivity.serviceBound) {
+                mainActivity.pacetifyService?.skipSong()
             } else {
-                Toast.makeText(activity!!, "Service is not active", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireActivity(), "Service is not active", Toast.LENGTH_SHORT).show()
             }
         }
 
         binding.onOff.setOnClickListener {
-            if (serviceBound) {
-                unbindService()
-                Intent(activity!!, PacetifyService::class.java).also {
-                    activity!!.stopService(it)
+            if (mainActivity.serviceBound) {
+                mainActivity.unbindService()
+                Intent(requireActivity(), PacetifyService::class.java).also {
+                    requireActivity().stopService(it)
                 }
             } else {
-                Intent(activity!!, PacetifyService::class.java).also {
-                    activity!!.startService(it)
+                Intent(requireActivity(), PacetifyService::class.java).also {
+                    requireActivity().startService(it)
                 }
-                bindService()
+                mainActivity.bindService()
             }
         }
 
@@ -190,20 +176,10 @@ class HomeFragment : Fragment() {
             }
         }
 
-        if (ContextCompat.checkSelfPermission(activity!!,
+        if (ContextCompat.checkSelfPermission(requireActivity(),
                 Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED
         ) requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
 
         return root
-    }
-
-    override fun onResume() {
-        super.onResume()
-        bindService()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (serviceBound) unbindService()
     }
 }
