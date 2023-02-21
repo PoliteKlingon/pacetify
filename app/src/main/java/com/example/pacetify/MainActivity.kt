@@ -108,7 +108,8 @@ class MainActivity : AppCompatActivity() {
                     val totalItems = jsonObject.getString("total").toInt()
                     var currentItems = 0
                     while (currentItems < totalItems) {
-                        //As the web API does support getting at most 50 results at a time, we have to split the query
+                        //As the web API does support getting at most 50 results at a time,
+                        // we have to split the query
                         addLimitedSongsFromPlaylist(playlist, currentItems, 50)
                         currentItems += 50
                     }
@@ -168,12 +169,14 @@ class MainActivity : AppCompatActivity() {
                 try {
                     val jsonObject = JSONObject(response.body!!.string())
                     val songName = jsonObject.getString("name")
-                    val artistName = jsonObject.getJSONArray("artists").getJSONObject(0).getString("name")
+                    val artistName = jsonObject.getJSONArray("artists")
+                        .getJSONObject(0).getString("name")
 
                     addSong(songUri, playlistName, songName, artistName, isFromPlaylist)
 
                 } catch (e: JSONException) {
-                    Log.d("MainActivity","Failed to parse data: $e") //we do not add songs with unknown bpm
+                    Log.d("MainActivity","Failed to parse data: $e")
+                    //we do not add songs with unknown bpm
                 }
             }
         })
@@ -233,6 +236,7 @@ class MainActivity : AppCompatActivity() {
         return mCall != null //TODO - this may cause the random playlist issues - a single mCall does not sound ok
     }
 
+    // In spite of being deprecated, this method continues to be the recommended method by Spotify
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
