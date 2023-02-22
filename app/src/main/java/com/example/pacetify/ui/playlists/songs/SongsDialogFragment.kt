@@ -65,7 +65,7 @@ class SongsDialogFragment(
 
         binding.fabAddSong.setOnClickListener {
             AddSongDialog(
-                requireActivity(), songs, dao, lifecycle, playlistName
+                requireActivity(), songs, lifecycle, playlistName
             ).apply {
                 setOnDismissListener{
                     songs.removeAll { true }

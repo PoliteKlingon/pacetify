@@ -65,8 +65,8 @@ class MainActivity : AppCompatActivity() {
         webApi.addSongsFromPlaylist(playlist, lifecycleScope)
     }
 
-    fun addSongWithName(songUri: String, playlistName: String, isFromPlaylist: Boolean) {
-        webApi.addSongWithName(songUri, playlistName, isFromPlaylist, lifecycleScope)
+    fun addSongWithName(songId: String, playlistName: String) {
+        webApi.addSongWithName(songId, playlistName, lifecycleScope)
     }
 
     fun isTokenAcquired(): Boolean {

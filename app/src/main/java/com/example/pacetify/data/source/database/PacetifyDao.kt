@@ -15,15 +15,15 @@ interface PacetifyDao {
     suspend fun insertPlaylist(playlist: Playlist)
 
     @Transaction
-    suspend fun safeInsertSong(song: Song){
+    suspend fun insertSong(song: Song){
         //stop importing songs from a playlist that has already been deleted
         if (numOfPlaylists(song.fromPlaylist) > 0) {
-            insertSong(song)
+            _insertSong(song)
         }
     }
 
     @Insert(entity = Song::class, onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertSong(song: Song)
+    suspend fun _insertSong(song: Song)
 
     @Query("SELECT * FROM Song GROUP BY uri ORDER BY bpm ASC")
     suspend fun getSongs(): Array<Song>

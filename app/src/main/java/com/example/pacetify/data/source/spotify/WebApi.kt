@@ -114,7 +114,7 @@ class WebApi(val activity: MainActivity) {
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.d("MainActivity","Failed to fetch data: $e")
+                Log.d("WebAPI","Failed to fetch data: $e")
             }
 
             @Throws(IOException::class)
@@ -130,7 +130,7 @@ class WebApi(val activity: MainActivity) {
                         currentItems += 50
                     }
                 } catch (e: JSONException) {
-                    Log.d("MainActivity","Failed to parse data: $e")
+                    Log.d("WebAPI","Failed to parse data: $e")
                 }
             }
         })
@@ -146,7 +146,7 @@ class WebApi(val activity: MainActivity) {
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.d("MainActivity","Failed to fetch data: $e")
+                Log.d("WebAPI","Failed to fetch data: $e")
             }
 
             @Throws(IOException::class)
@@ -154,20 +154,105 @@ class WebApi(val activity: MainActivity) {
                 try {
                     val jsonObject = JSONObject(response.body!!.string())
                     val arr = jsonObject.getJSONArray("items")
+                    val songUris = mutableListOf<String>()
                     for (i in 0 until arr.length()) {
                         val item = arr.getJSONObject(i)
                         val songUri = item.getJSONObject("track").getString("uri")
-                        addSongWithName(songUri, playlist.name, true, lifecycleScope)
+                        songUris.add(songUri)
                     }
+                    addMultipleSongsWithName(songUris, playlist.name, lifecycleScope)
                 } catch (e: JSONException) {
-                    Log.d("MainActivity","Failed to parse data: $e")
+                    Log.d("WebAPI","Failed to parse data: $e")
                 }
             }
         })
     }
 
-    fun addSongWithName(songUri: String, playlistName: String, isFromPlaylist: Boolean, lifecycleScope: LifecycleCoroutineScope) {
-        val songId = songUri.takeLastWhile { ch -> ch != ':' }
+    private fun addMultipleSongsWithName(songUris: List<String>, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
+        val songIds = songUris.map { songUri -> songUri.takeLastWhile { ch -> ch != ':' } }
+        val request: Request = Request.Builder()
+            .url("https://api.spotify.com/v1/tracks?ids=${songIds.joinToString(separator = ",")}")
+            .addHeader("Authorization", "Bearer $mAccessToken")
+            .build()
+
+        mCall = mOkHttpClient.newCall(request)
+
+        mCall?.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("WebAPI","Failed to fetch data: $e")
+            }
+
+            @Throws(IOException::class)
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    val jsonObject = JSONObject(response.body!!.string())
+
+                    val jsonSongs = jsonObject.getJSONArray("tracks")
+
+                    val songs = mutableListOf<Song>()
+                    for (i in 0 until jsonSongs.length()) {
+                        val item = jsonSongs.getJSONObject(i)
+                        val songUri = item.getString("uri")
+                        val songName = item.getString("name")
+                        val artistName = item.getJSONArray("artists")
+                            .getJSONObject(0).getString("name")
+
+                        songs.add(Song(songUri, songName, artistName, -1, playlistName))
+                    }
+
+                    addMultipleSongs(songs, lifecycleScope)
+
+                } catch (e: JSONException) {
+                    Log.d("WebAPI","Failed to parse data: $e")
+                }
+            }
+        })
+    }
+
+    private fun addMultipleSongs(songs: List<Song>, lifecycleScope: LifecycleCoroutineScope) {
+        val songIds = songs.map { song -> song.uri.takeLastWhile { ch -> ch != ':' } }
+        val request: Request = Request.Builder()
+            .url("https://api.spotify.com/v1/audio-features?ids=${songIds.joinToString(separator = ",")}")
+            .addHeader("Authorization", "Bearer $mAccessToken")
+            .build()
+
+        mCall = mOkHttpClient.newCall(request)
+
+        mCall?.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("WebAPI","Failed to fetch data: $e")
+            }
+
+            @Throws(IOException::class)
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    val jsonObject = JSONObject(response.body!!.string())
+                    val jsonSongs = jsonObject.getJSONArray("audio_features")
+
+                    for (i in 0 until jsonSongs.length()) {
+                        val item = jsonSongs.getJSONObject(i)
+                        val bpm = item.getString("tempo").takeWhile { ch -> ch != '.' }.toInt()
+                        val songUri = item.getString("uri")
+
+                        if (songUri == songs[i].uri) {
+                            lifecycleScope.launch {
+                                val song = songs[i].copy(bpm = bpm)
+                                dao.insertSong(song)
+                                Log.d("WebAPI", "inserted song: $song")
+                            }
+                        } else {
+                            Log.d("WebAPI", "request and response song uri do not match")
+                        }
+                    }
+                } catch (e: JSONException) {
+                    Log.d("WebAPI","Failed to parse data: $e")
+                    //we do not add songs with unknown bpm
+                }
+            }
+        })
+    }
+
+    fun addSongWithName(songId: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/tracks/$songId")
             .addHeader("Authorization", "Bearer $mAccessToken")
@@ -177,7 +262,7 @@ class WebApi(val activity: MainActivity) {
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.d("MainActivity","Failed to fetch data: $e")
+                Log.d("WebAPI","Failed to fetch data: $e")
             }
 
             @Throws(IOException::class)
@@ -188,17 +273,17 @@ class WebApi(val activity: MainActivity) {
                     val artistName = jsonObject.getJSONArray("artists")
                         .getJSONObject(0).getString("name")
 
-                    addSong(songUri, playlistName, songName, artistName, isFromPlaylist, lifecycleScope)
+                    addSong("spotify:track:$songId", playlistName, songName, artistName, lifecycleScope)
 
                 } catch (e: JSONException) {
-                    Log.d("MainActivity","Failed to parse data: $e")
+                    Log.d("WebAPI","Failed to parse data: $e")
                     //we do not add songs with unknown bpm
                 }
             }
         })
     }
 
-    private fun addSong(songUri: String, playlistName: String, songName: String, artistName: String, isFromPlaylist: Boolean, lifecycleScope: LifecycleCoroutineScope) {
+    private fun addSong(songUri: String, playlistName: String, songName: String, artistName: String, lifecycleScope: LifecycleCoroutineScope) {
         val songId = songUri.takeLastWhile { ch -> ch != ':' }
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/audio-features/$songId")
@@ -209,7 +294,7 @@ class WebApi(val activity: MainActivity) {
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
-                Log.d("MainActivity","Failed to fetch data: $e")
+                Log.d("WebAPI","Failed to fetch data: $e")
             }
 
             @Throws(IOException::class)
@@ -219,12 +304,12 @@ class WebApi(val activity: MainActivity) {
                     val bpm = jsonObject.getString("tempo").takeWhile { ch -> ch != '.' }.toInt()
                     lifecycleScope.launch {
                         val song = Song(songUri, songName, artistName, bpm, playlistName)
-                        if (isFromPlaylist) dao?.safeInsertSong(song)
-                        else                dao?.insertSong(song)
-                        Log.d("MainActivity", "inserted song: $song")
+                        dao.insertSong(song)
+                        Log.d("WebAPI", "inserted song: $song")
                     }
                 } catch (e: JSONException) {
-                    Log.d("MainActivity","Failed to parse data: $e") //we do not add songs with unknown bpm
+                    Log.d("WebAPI","Failed to parse data: $e")
+                    //we do not add songs with unknown bpm
                 }
             }
         })
@@ -235,6 +320,6 @@ class WebApi(val activity: MainActivity) {
     }
 
     fun isNetworkBeingUsed(): Boolean {
-        return mCall != null //TODO - this may cause the random playlist issues - a single mCall does not sound ok
+        return mCall != null //TODO
     }
 }

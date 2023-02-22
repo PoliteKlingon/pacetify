@@ -17,7 +17,6 @@ import com.example.pacetify.util.UriUtils
 class AddSongDialog(
     val activity: Activity,
     val songs: MutableList<Song>,
-    val dao: PacetifyDao,
     val lifecycle: Lifecycle,
     val playlistName: String
 ): Dialog(activity){
@@ -47,7 +46,7 @@ class AddSongDialog(
                     id = id.takeWhile { ch -> ch != '?' }
                 }
 
-                (activity as MainActivity?)?.addSongWithName(id, playlistName, false)
+                (activity as MainActivity?)?.addSongWithName(id, playlistName)
 
                 dismiss()
             }
