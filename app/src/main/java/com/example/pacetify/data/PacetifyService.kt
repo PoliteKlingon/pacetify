@@ -163,7 +163,7 @@ class PacetifyService : Service(), SensorEventListener {
                     .setContentTitle("Pacetify service is running")
                     .setContentText("Let's run!")
                     .setContentIntent(pendingIntent)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground) //TODO change
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
 
             startForeground(1, notification!!.build())
         }

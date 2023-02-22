@@ -90,8 +90,8 @@ class PlaylistsFragment : Fragment() {
     private fun insertedPlaylist(adapter: PlaylistAdapter) {
         lifecycleScope.launch {
             while((activity as MainActivity?)?.isNetworkBeingUsed() == true) {
+                delay(500) //TODO is there a better way?
                 adapter.notifyDataSetChanged()
-                delay(1000) //TODO is there a better way?
             }
         }
     }

@@ -38,12 +38,13 @@ class WebApi(val activity: MainActivity) {
     }
 
     private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
-    private val REDIRECT_URI = "com.example.pacetify://callback" //TODO??
-    //private val AUTH_TOKEN_REQUEST_CODE = 0x10
+    private val REDIRECT_URI = "com.example.pacetify://callback"
 
     private val mOkHttpClient = OkHttpClient()
     private var mAccessToken: String? = null
     private var mCall: Call? = null
+
+    private var ongoingRequestsCount = 0
 
     private var connectivityManager: ConnectivityManager =
         activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -109,7 +110,7 @@ class WebApi(val activity: MainActivity) {
     }
 
     fun isNetworkBeingUsed(): Boolean {
-        return mCall != null //TODO
+        return ongoingRequestsCount > 0
     }
 
     fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope) {
@@ -119,10 +120,12 @@ class WebApi(val activity: MainActivity) {
             .build()
 
         mCall = mOkHttpClient.newCall(request)
+        ongoingRequestsCount++
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.d("WebAPI","Failed to fetch data: $e")
+                ongoingRequestsCount--
             }
 
             @Throws(IOException::class)
@@ -140,6 +143,7 @@ class WebApi(val activity: MainActivity) {
                 } catch (e: JSONException) {
                     Log.d("WebAPI","Failed to parse data: $e")
                 }
+                ongoingRequestsCount--
             }
         })
     }
@@ -151,10 +155,12 @@ class WebApi(val activity: MainActivity) {
             .build()
 
         mCall = mOkHttpClient.newCall(request)
+        ongoingRequestsCount++
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.d("WebAPI","Failed to fetch data: $e")
+                ongoingRequestsCount--
             }
 
             @Throws(IOException::class)
@@ -172,6 +178,7 @@ class WebApi(val activity: MainActivity) {
                 } catch (e: JSONException) {
                     Log.d("WebAPI","Failed to parse data: $e")
                 }
+                ongoingRequestsCount--
             }
         })
     }
@@ -184,10 +191,12 @@ class WebApi(val activity: MainActivity) {
             .build()
 
         mCall = mOkHttpClient.newCall(request)
+        ongoingRequestsCount++
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.d("WebAPI","Failed to fetch data: $e")
+                ongoingRequestsCount--
             }
 
             @Throws(IOException::class)
@@ -213,6 +222,7 @@ class WebApi(val activity: MainActivity) {
                 } catch (e: JSONException) {
                     Log.d("WebAPI","Failed to parse data: $e")
                 }
+                ongoingRequestsCount--
             }
         })
     }
@@ -225,10 +235,12 @@ class WebApi(val activity: MainActivity) {
             .build()
 
         mCall = mOkHttpClient.newCall(request)
+        ongoingRequestsCount++
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.d("WebAPI","Failed to fetch data: $e")
+                ongoingRequestsCount--
             }
 
             @Throws(IOException::class)
@@ -256,6 +268,7 @@ class WebApi(val activity: MainActivity) {
                     Log.d("WebAPI","Failed to parse data: $e")
                     //we do not add songs with unknown bpm
                 }
+                ongoingRequestsCount--
             }
         })
     }
@@ -267,10 +280,12 @@ class WebApi(val activity: MainActivity) {
             .build()
 
         mCall = mOkHttpClient.newCall(request)
+        ongoingRequestsCount++
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.d("WebAPI","Failed to fetch data: $e")
+                ongoingRequestsCount--
             }
 
             @Throws(IOException::class)
@@ -287,6 +302,7 @@ class WebApi(val activity: MainActivity) {
                     Log.d("WebAPI","Failed to parse data: $e")
                     //we do not add songs with unknown bpm
                 }
+                ongoingRequestsCount--
             }
         })
     }
@@ -299,10 +315,12 @@ class WebApi(val activity: MainActivity) {
             .build()
 
         mCall = mOkHttpClient.newCall(request)
+        ongoingRequestsCount++
 
         mCall?.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 Log.d("WebAPI","Failed to fetch data: $e")
+                ongoingRequestsCount--
             }
 
             @Throws(IOException::class)
@@ -319,6 +337,7 @@ class WebApi(val activity: MainActivity) {
                     Log.d("WebAPI","Failed to parse data: $e")
                     //we do not add songs with unknown bpm
                 }
+                ongoingRequestsCount--
             }
         })
     }
