@@ -2,6 +2,7 @@ package com.example.pacetify.ui.home
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -15,6 +16,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.pacetify.MainActivity
+import com.example.pacetify.R
 import com.example.pacetify.databinding.FragmentHomeBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,8 +38,8 @@ class HomeFragment : Fragment() {
     private lateinit var mainActivity: MainActivity
     private var serviceBoundFlowObserver: Job? = null
 
-    fun onServiceConnected() {
-        binding.onOff.text = "ON"
+    private fun onServiceConnected() {
+        binding.onOff.text = getString(R.string.service_on)
 
         if (mainActivity.pacetifyService == null) {
             return
@@ -61,7 +63,6 @@ class HomeFragment : Fragment() {
         binding.displaySong.text = songNameFlow?.value
 
         if (cadenceFlowObserver == null) {
-            Log.d("asd", "ASD")
             cadenceFlowObserver = lifecycleScope.launchWhenStarted {
                 cadenceFlow?.collectLatest {
                     binding.displayCadence.text = it
@@ -74,7 +75,7 @@ class HomeFragment : Fragment() {
             homeTextFlowObserver = lifecycleScope.launchWhenStarted {
                 homeTextFlow?.collectLatest {
                     binding.textHome.text = it
-                    Log.d("HomeFragment", "hometext updated")
+                    Log.d("HomeFragment", "homeText updated")
                 }
             }
         }
@@ -83,7 +84,7 @@ class HomeFragment : Fragment() {
             songNameFlowObserver = lifecycleScope.launchWhenStarted {
                 songNameFlow?.collectLatest {
                     binding.displaySong.text = it
-                    Log.d("HomeFragment", "songname updated")
+                    Log.d("HomeFragment", "songName updated")
                 }
             }
         }
@@ -92,9 +93,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun onServiceDisconnected() {
-        binding.onOff.text = "OFF"
+        binding.onOff.text = getString(R.string.service_off)
 
-        binding.displayCadence.text = "You have to start the Service first"
+        binding.displayCadence.text = getString(R.string.service_off_description)
         binding.textHome.text = ""
         binding.displaySong.text = ""
         binding.skipSong.isEnabled = mainActivity.serviceBound
@@ -113,7 +114,6 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        //if (serviceBound) unbindService()
         onServiceDisconnected()
         serviceBoundFlowObserver?.cancel(CancellationException())
         _binding = null
@@ -142,11 +142,9 @@ class HomeFragment : Fragment() {
             }
         }
 
-        //bindService()
-
         val textView: TextView = binding.textHome
         homeViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = /*it*/ "Spotify Running App"
+            textView.text = /*it*/ getString(R.string.home_text_default)
         }
 
         binding.skipSong.isEnabled = mainActivity.serviceBound
@@ -169,7 +167,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        if (cadenceFlow == null) binding.displayCadence.text = "You have to start the Service first"
+        if (cadenceFlow == null) binding.displayCadence.text = getString(R.string.service_off_description)
 
         if (homeTextFlow == null) binding.textHome.text = ""
 
@@ -180,17 +178,19 @@ class HomeFragment : Fragment() {
         ) { isGranted ->
             if (isGranted) {
                 binding.onOff.isEnabled = true
-                binding.displayCadence.text = "You have to start the Service first"
+                binding.displayCadence.text = getString(R.string.service_off_description)
             } else {
-                binding.displayCadence.text = "This app will not work without activity recognition enabled. " +
-                        "Please add this permission in settings."
+                binding.displayCadence.text = getString(R.string.activity_recognition_disabled_warning)
                 binding.onOff.isEnabled = false
             }
         }
 
-        if (ContextCompat.checkSelfPermission(requireActivity(),
-                Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED
-        ) requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        if (ContextCompat.checkSelfPermission(
+                requireActivity(),
+                Manifest.permission.ACTIVITY_RECOGNITION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
+            requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
 
         return root
     }
