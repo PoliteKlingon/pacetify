@@ -41,10 +41,4 @@ class SettingsPreferenceFile(
             prefEditor.putInt("time", time)
             prefEditor.apply()
         }
-
-    fun saveSettings(motivate: Boolean, rest: Boolean, restTime: Int) {
-        this.motivate = motivate
-        this.rest = rest
-        this.restTime = restTime
-    }
 }

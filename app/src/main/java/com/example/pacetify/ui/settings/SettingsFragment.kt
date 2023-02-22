@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
 import com.example.pacetify.MainActivity
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.example.pacetify.databinding.FragmentSettingsBinding
@@ -37,8 +36,8 @@ class SettingsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val settingsViewModel =
-            ViewModelProvider(this).get(SettingsViewModel::class.java)
+        /*val settingsViewModel =
+            ViewModelProvider(this).get(SettingsViewModel::class.java)*/
 
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
