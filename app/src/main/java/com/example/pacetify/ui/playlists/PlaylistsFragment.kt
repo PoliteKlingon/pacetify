@@ -10,6 +10,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.example.pacetify.MainActivity
+import com.example.pacetify.R
 import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.databinding.FragmentPlaylistsBinding
@@ -52,11 +53,11 @@ class PlaylistsFragment : Fragment() {
 
         playlists = mutableListOf()
 
-        binding.tvNoPlaylists.text = if (playlists.isEmpty()) "No playlists yet" else ""
+        binding.tvNoPlaylists.text = if (playlists.isEmpty()) getString(R.string.no_playlists) else ""
 
         class PlaylistAdapterDataObserver: AdapterDataObserver() {
             override fun onChanged() {
-                binding.tvNoPlaylists.text = if (playlists.isEmpty()) "No playlists yet" else ""
+                binding.tvNoPlaylists.text = if (playlists.isEmpty()) getString(R.string.no_playlists) else ""
             }
         }
 

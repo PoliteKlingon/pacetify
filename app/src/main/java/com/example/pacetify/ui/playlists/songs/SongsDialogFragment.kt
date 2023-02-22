@@ -8,6 +8,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.pacetify.MainActivity
+import com.example.pacetify.R
 import com.example.pacetify.data.PacetifyService
 import com.example.pacetify.data.Song
 import com.example.pacetify.data.source.database.PacetifyDatabase
@@ -17,10 +18,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SongsDialogFragment(
-    val serviceBound: Boolean,
-    val sraService: PacetifyService?,
-    val adapter: PlaylistAdapter,
-    val playlistName: String
+    private val serviceBound: Boolean,
+    private val pacetifyService: PacetifyService?,
+    private val adapter: PlaylistAdapter,
+    private val playlistName: String
 ): DialogFragment() {
 
     private var _binding: DialogFragmentSongsBinding? = null
@@ -45,17 +46,17 @@ class SongsDialogFragment(
 
         songs = mutableListOf()
 
-        binding.tvNoSongs.text = if (songs.isEmpty()) "No playlists yet" else ""
+        binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
 
-        class PlaylistAdapterDataObserver: RecyclerView.AdapterDataObserver() {
+        class SongAdapterDataObserver: RecyclerView.AdapterDataObserver() {
             override fun onChanged() {
-                binding.tvNoSongs.text = if (songs.isEmpty()) "No playlists yet" else ""
+                binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
             }
         }
 
         val adapter = SongAdapter(songs, dao, lifecycleScope, activity as MainActivity?)
         binding.rvSongs.adapter = adapter
-        adapter.registerAdapterDataObserver(PlaylistAdapterDataObserver())
+        adapter.registerAdapterDataObserver(SongAdapterDataObserver())
         binding.rvSongs.layoutManager = LinearLayoutManager(activity)
 
         lifecycleScope.launch {
@@ -74,7 +75,7 @@ class SongsDialogFragment(
                         songs.addAll(dao.getSongsFromPlaylist(playlistName))
                         adapter.notifyDataSetChanged()
                         binding.tvNoSongs.text = ""
-                        if (serviceBound) sraService?.notifyPlaylistsChanged()
+                        if (serviceBound) pacetifyService?.notifyPlaylistsChanged()
                     }
                 }
                 show()

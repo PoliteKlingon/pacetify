@@ -6,6 +6,8 @@
     <string name="service_on">ON</string>
     <string name="service_off">OFF</string>
     <string name="service_off_description">You have to start the Service first</string>
-    <string name="home_text_default">Pacetify</string>
+    <string name="home_text_default">Welcome to Pacetify!</string>
     <string name="activity_recognition_disabled_warning">This app will not work without activity recognition enabled. Please add this permission in settings.</string>
+    <string name="no_playlists">No playlists yet</string>
+    <string name="no_songs">No songs yet</string>
 </resources>

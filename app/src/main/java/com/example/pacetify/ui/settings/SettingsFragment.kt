@@ -56,7 +56,7 @@ class SettingsFragment : Fragment() {
         binding.swRest.isChecked = settingsFile.rest
         binding.sbRest.progress = timeToSliderProgress(settingsFile.restTime)
         binding.sbRest.isEnabled = binding.swRest.isChecked
-        binding.tvRest.text = "Maximal resting time: " + settingsFile.restTime + " s"
+        binding.tvRest.text = "Maximal resting time: ${settingsFile.restTime} s"
 
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
