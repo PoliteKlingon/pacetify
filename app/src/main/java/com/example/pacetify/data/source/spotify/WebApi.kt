@@ -100,8 +100,16 @@ class WebApi(val activity: MainActivity) {
         resultLauncher.launch(authIntent)
     }
 
-    private fun cancelCall() {
+    fun onDestroy() {
         mCall?.cancel()
+    }
+
+    fun isTokenAcquired(): Boolean {
+        return mAccessToken != null
+    }
+
+    fun isNetworkBeingUsed(): Boolean {
+        return mCall != null //TODO
     }
 
     fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope) {
@@ -313,13 +321,5 @@ class WebApi(val activity: MainActivity) {
                 }
             }
         })
-    }
-
-    fun isTokenAcquired(): Boolean {
-        return mAccessToken != null
-    }
-
-    fun isNetworkBeingUsed(): Boolean {
-        return mCall != null //TODO
     }
 }

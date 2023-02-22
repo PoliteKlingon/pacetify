@@ -77,21 +77,6 @@ class MainActivity : AppCompatActivity() {
         return webApi.isNetworkBeingUsed()
     }
 
-    override fun onResume() {
-        super.onResume()
-        bindService()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (serviceBound) unbindService()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (serviceBound) unbindService()
-    }
-
     fun startService(tick: Boolean = true) {
         Intent(this, PacetifyService::class.java).also {
             it.putExtra("tick", tick)
@@ -127,5 +112,21 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bindService()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (serviceBound) unbindService()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        webApi.onDestroy()
+        if (serviceBound) unbindService()
     }
 }
