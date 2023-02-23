@@ -246,7 +246,7 @@ class PacetifyService : Service(), SensorEventListener {
         pauseSong()
         playerStateSubscription?.cancel()
         stopTicking()
-        SpotifyAppRemote.disconnect(mSpotifyAppRemote);
+        SpotifyAppRemote.disconnect(mSpotifyAppRemote)
         Log.d("PacetifyService", "disconnected from Spotify")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) stopForeground(STOP_FOREGROUND_DETACH)
     }
