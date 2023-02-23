@@ -89,7 +89,7 @@ class HomeFragment : Fragment() {
             }
         }
 
-        binding.skipSong.isEnabled = mainActivity.serviceBound
+        binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
     }
 
     private fun onServiceDisconnected() {
@@ -98,7 +98,7 @@ class HomeFragment : Fragment() {
         binding.displayCadence.text = getString(R.string.service_off_description)
         binding.textHome.text = ""
         binding.displaySong.text = ""
-        binding.skipSong.isEnabled = mainActivity.serviceBound
+        binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
 
         cadenceFlow = null
         homeTextFlow = null
@@ -147,10 +147,10 @@ class HomeFragment : Fragment() {
             textView.text = /*it*/ getString(R.string.home_text_default)
         }
 
-        binding.skipSong.isEnabled = mainActivity.serviceBound
+        binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
 
         binding.skipSong.setOnClickListener {
-            if (mainActivity.serviceBound) {
+            if (mainActivity.serviceBoundFlow.value) {
                 mainActivity.pacetifyService?.skipSong()
             } else {
                 Toast.makeText(requireActivity(), "Service is not active", Toast.LENGTH_SHORT).show()
@@ -158,7 +158,7 @@ class HomeFragment : Fragment() {
         }
 
         binding.onOff.setOnClickListener {
-            if (mainActivity.serviceBound) {
+            if (mainActivity.serviceBoundFlow.value) {
                 mainActivity.unbindService()
                 mainActivity.stopService()
             } else {
@@ -197,14 +197,14 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (mainActivity.serviceBound) {
+        if (mainActivity.serviceBoundFlow.value) {
             onServiceConnected()
         }
     }
 
     override fun onPause() {
         super.onPause()
-        if (mainActivity.serviceBound) {
+        if (mainActivity.serviceBoundFlow.value) {
             onServiceDisconnected()
         }
     }

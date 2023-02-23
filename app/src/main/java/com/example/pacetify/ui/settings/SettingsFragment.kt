@@ -63,7 +63,7 @@ class SettingsFragment : Fragment() {
                 binding.tvRest.text = "Maximal resting time: $curRestTime s"
 
                 settingsFile.restTime = curRestTime
-                if (mainActivity.serviceBound)
+                if (mainActivity.serviceBoundFlow.value)
                         mainActivity.pacetifyService?.notifySettingsChanged()
             }
 
@@ -74,14 +74,14 @@ class SettingsFragment : Fragment() {
 
         binding.swMotivate.setOnClickListener {
             settingsFile.motivate = binding.swMotivate.isChecked
-            if (mainActivity.serviceBound)
+            if (mainActivity.serviceBoundFlow.value)
                 mainActivity.pacetifyService?.notifySettingsChanged()
         }
 
         binding.swRest.setOnClickListener {
             settingsFile.rest = binding.swRest.isChecked
             binding.sbRest.isEnabled = binding.swRest.isChecked
-            if (mainActivity.serviceBound)
+            if (mainActivity.serviceBoundFlow.value)
                 mainActivity.pacetifyService?.notifySettingsChanged()
         }
 

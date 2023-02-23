@@ -85,7 +85,7 @@ class SongsDialogFragment(
         // Enabling playing the songs on tap:
         // First we stop the service clock ticking so we can play individual songs
         mainActivity = requireActivity() as MainActivity
-        if (!mainActivity.serviceBound) {
+        if (!mainActivity.serviceBoundFlow.value) {
             // If the service is not running, we want to start it to be able to use it
             mainActivity.startService(tick = false) //we do not want the service to start the clock
             mainActivity.bindService()
@@ -99,7 +99,7 @@ class SongsDialogFragment(
     override fun onDestroyView() {
         super.onDestroyView()
         // If the service exists - it should - then start the clock again
-        if (mainActivity.serviceBound)
+        if (mainActivity.serviceBoundFlow.value)
             mainActivity.pacetifyService?.startTicking()
     }
 

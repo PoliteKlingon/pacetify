@@ -24,10 +24,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     var pacetifyService: PacetifyService? = null
-    var serviceBound: Boolean = false
-
     lateinit var serviceBoundFlow: MutableStateFlow<Boolean>
-
 
     private lateinit var webApi: WebApi
 
@@ -36,14 +33,12 @@ class MainActivity : AppCompatActivity() {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as PacetifyService.PacetifyBinder
             pacetifyService = binder.getService()
-            serviceBound = true
             serviceBoundFlow.value = true
 
             Log.d("MainActivity", "service connected")
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
-            serviceBound = false
             serviceBoundFlow.value = false
         }
     }
@@ -56,7 +51,6 @@ class MainActivity : AppCompatActivity() {
 
     fun unbindService() {
         unbindService(connection)
-        serviceBound = false
         serviceBoundFlow.value = false
     }
 
@@ -120,12 +114,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        if (serviceBound) unbindService()
+        if (serviceBoundFlow.value) unbindService()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         webApi.onDestroy()
-        if (serviceBound) unbindService()
+        if (serviceBoundFlow.value) unbindService()
     }
 }

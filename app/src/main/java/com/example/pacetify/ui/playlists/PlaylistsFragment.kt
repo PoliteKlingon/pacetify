@@ -61,7 +61,7 @@ class PlaylistsFragment : Fragment() {
         }
 
         val adapter = PlaylistAdapter(playlists, dao, lifecycleScope, activity as MainActivity?,
-            mainActivity.serviceBound, mainActivity.pacetifyService, childFragmentManager)
+            mainActivity.serviceBoundFlow.value, mainActivity.pacetifyService, childFragmentManager)
         binding.rvPlaylists.adapter = adapter
         adapter.registerAdapterDataObserver(PlaylistAdapterDataObserver())
         binding.rvPlaylists.layoutManager = LinearLayoutManager(activity)
@@ -73,7 +73,7 @@ class PlaylistsFragment : Fragment() {
 
         binding.fabAddPlaylist.setOnClickListener {
             AddPlaylistDialog(
-                mainActivity, playlists, dao, adapter, mainActivity.serviceBound,
+                mainActivity, playlists, dao, adapter, mainActivity.serviceBoundFlow.value,
                 mainActivity.pacetifyService, lifecycle
             ).apply {
                 setOnDismissListener{
