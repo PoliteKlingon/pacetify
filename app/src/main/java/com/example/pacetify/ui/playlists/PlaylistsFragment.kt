@@ -16,6 +16,10 @@ import com.example.pacetify.databinding.FragmentPlaylistsBinding
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * In this fragment the user manages (display, add, delete) their imported playlists and songs
+ * that are then played while running.
+ */
 class PlaylistsFragment : Fragment() {
 
     private var _binding: FragmentPlaylistsBinding? = null
@@ -38,6 +42,7 @@ class PlaylistsFragment : Fragment() {
         /*val playlistsViewModel =
             ViewModelProvider(this).get(PlaylistsViewModel::class.java)*/
 
+        // we need the activity reference so we can communicate with the service through it
         val mainActivity = requireActivity() as MainActivity
 
         _binding = FragmentPlaylistsBinding.inflate(inflater, container, false)
@@ -52,6 +57,8 @@ class PlaylistsFragment : Fragment() {
 
         playlists = mutableListOf()
 
+        // this is a textView in which we display the info about no playlists being present, but
+        // as soon as at least a single playlist is present, we leave it blank. Hence the observer.
         binding.tvNoPlaylists.text = if (playlists.isEmpty()) getString(R.string.no_playlists) else ""
 
         class PlaylistAdapterDataObserver: AdapterDataObserver() {
@@ -60,8 +67,9 @@ class PlaylistsFragment : Fragment() {
             }
         }
 
-        val adapter = PlaylistAdapter(playlists, dao, lifecycleScope, activity as MainActivity?,
-            mainActivity.serviceBoundFlow.value, mainActivity.pacetifyService, childFragmentManager)
+        // the adapter for the playlists recyclerView
+        val adapter = PlaylistAdapter(playlists, dao, lifecycleScope, activity as MainActivity,
+            childFragmentManager)
         binding.rvPlaylists.adapter = adapter
         adapter.registerAdapterDataObserver(PlaylistAdapterDataObserver())
         binding.rvPlaylists.layoutManager = LinearLayoutManager(activity)
@@ -71,10 +79,10 @@ class PlaylistsFragment : Fragment() {
             adapter.notifyDataSetChanged()
         }
 
+        // the option to add a playlist
         binding.fabAddPlaylist.setOnClickListener {
             AddPlaylistDialog(
-                mainActivity, playlists, dao, adapter, mainActivity.serviceBoundFlow.value,
-                mainActivity.pacetifyService, lifecycle
+                mainActivity, playlists, dao, adapter, lifecycle
             ).apply {
                 setOnDismissListener{
                     insertedPlaylist(adapter)
@@ -87,6 +95,8 @@ class PlaylistsFragment : Fragment() {
         return root
     }
 
+    // this function ensures the recyclerView displayed song numbers to be updated as long as the actual song
+    // count is updated
     private fun insertedPlaylist(adapter: PlaylistAdapter) {
         lifecycleScope.launch {
             while((activity as MainActivity?)?.isNetworkBeingUsed() == true) {

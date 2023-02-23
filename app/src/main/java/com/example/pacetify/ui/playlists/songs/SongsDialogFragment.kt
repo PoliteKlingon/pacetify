@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.pacetify.MainActivity
 import com.example.pacetify.R
-import com.example.pacetify.data.PacetifyService
 import com.example.pacetify.data.Song
 import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.databinding.DialogFragmentSongsBinding
@@ -17,9 +16,10 @@ import com.example.pacetify.ui.playlists.PlaylistAdapter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * A dialogFragment for managing the songs of the playlist.
+ */
 class SongsDialogFragment(
-    private val serviceBound: Boolean,
-    private val pacetifyService: PacetifyService?,
     private val adapter: PlaylistAdapter,
     private val playlistName: String
 ): DialogFragment() {
@@ -36,6 +36,8 @@ class SongsDialogFragment(
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+
+        mainActivity = requireActivity() as MainActivity
 
         isCancelable = true
 
@@ -54,7 +56,7 @@ class SongsDialogFragment(
             }
         }
 
-        val adapter = SongAdapter(songs, dao, lifecycleScope, activity as MainActivity?)
+        val adapter = SongAdapter(songs, dao, lifecycleScope, activity as MainActivity)
         binding.rvSongs.adapter = adapter
         adapter.registerAdapterDataObserver(SongAdapterDataObserver())
         binding.rvSongs.layoutManager = LinearLayoutManager(activity)
@@ -64,9 +66,10 @@ class SongsDialogFragment(
             adapter.notifyDataSetChanged()
         }
 
+        // the option to add a song into the playlist
         binding.fabAddSong.setOnClickListener {
             AddSongDialog(
-                requireActivity(), songs, lifecycle, playlistName
+                requireActivity() as MainActivity, songs, lifecycle, playlistName
             ).apply {
                 setOnDismissListener{
                     songs.removeAll { true }
@@ -75,7 +78,8 @@ class SongsDialogFragment(
                         songs.addAll(dao.getSongsFromPlaylist(playlistName))
                         adapter.notifyDataSetChanged()
                         binding.tvNoSongs.text = ""
-                        if (serviceBound) pacetifyService?.notifyPlaylistsChanged()
+                        if (mainActivity.serviceBoundFlow.value)
+                            mainActivity.pacetifyService?.notifyPlaylistsChanged()
                     }
                 }
                 show()
@@ -84,7 +88,6 @@ class SongsDialogFragment(
 
         // Enabling playing the songs on tap:
         // First we stop the service clock ticking so we can play individual songs
-        mainActivity = requireActivity() as MainActivity
         if (!mainActivity.serviceBoundFlow.value) {
             // If the service is not running, we want to start it to be able to use it
             mainActivity.startService(tick = false) //we do not want the service to start the clock
@@ -105,6 +108,7 @@ class SongsDialogFragment(
 
     override fun onResume() {
         super.onResume()
+        // we need to reset the window attributes for the window to be displayed correctly
         val windowAttributes = dialog?.window?.attributes?.apply {
             width = WindowManager.LayoutParams.MATCH_PARENT
             height = WindowManager.LayoutParams.MATCH_PARENT

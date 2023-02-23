@@ -2,6 +2,10 @@ package com.example.pacetify.data.source.preferenceFiles
 
 import android.content.Context
 
+/**
+ * This is a singleton class for the settings preference file manipulation.
+ * The file stores the settings entered by the user - motivate, rest and restTime.
+ */
 class SettingsPreferenceFile(
     context: Context
 ) {
@@ -9,6 +13,7 @@ class SettingsPreferenceFile(
         @Volatile
         private var INSTANCE: SettingsPreferenceFile? = null
 
+        // make this class a singleton
         fun getInstance(context: Context): SettingsPreferenceFile {
             synchronized(this) {
                 return INSTANCE ?: SettingsPreferenceFile(context).also {

@@ -11,11 +11,15 @@ import com.example.pacetify.data.source.database.PacetifyDao
 import com.example.pacetify.databinding.SongBinding
 import kotlinx.coroutines.launch
 
+/**
+ * The adapter for every song in the songs recyclerView. It shows the song information,
+ * and it can be deleted or played by clicking on it.
+ */
 class SongAdapter(
     private var songs: MutableList<Song>,
     private val dao: PacetifyDao,
     private val lifecycleScope: LifecycleCoroutineScope,
-    private val activity: MainActivity?
+    private val mainActivity: MainActivity
 ) : RecyclerView.Adapter<SongAdapter.SongViewHolder>()
 {
     class SongViewHolder(val binding: SongBinding) : RecyclerView.ViewHolder(binding.root)
@@ -36,8 +40,9 @@ class SongAdapter(
             tvSongName.text = currentSong.name
             tvArtistName.text = "${currentSong.artistName} (bpm: ${currentSong.bpm})"
 
+            // display a dialog to ensure that the user wants to delete the song
             btnDelete.setOnClickListener {
-                AlertDialog.Builder(activity!!)
+                AlertDialog.Builder(mainActivity!!)
                     .setTitle("Are you sure?")
                     .setMessage("Do you want to delete \"${currentSong.name}\"?")
                     .setNegativeButton("Cancel") { dialog, _ ->
@@ -49,6 +54,7 @@ class SongAdapter(
                         lifecycleScope.launch {
                             dao.deleteSong(currentSong)
                         }
+                        mainActivity.notifyServicePlaylists()
                         dialog.dismiss()
                     }
                     .show()
@@ -56,7 +62,8 @@ class SongAdapter(
 
             // Play the song on tap
             songView.setOnClickListener {
-                activity?.pacetifyService?.playSong(currentSong)
+                if (mainActivity.serviceBoundFlow.value)
+                    mainActivity.pacetifyService?.playSong(currentSong)
             }
         }
     }

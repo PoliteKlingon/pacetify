@@ -19,15 +19,20 @@ import com.example.pacetify.data.source.spotify.WebApi
 import com.example.pacetify.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.MutableStateFlow
 
+/**
+ * The main (and the only one) activity in our application
+ */
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
     var pacetifyService: PacetifyService? = null
+    // This is a flow in which we will store whether the service is bound
     lateinit var serviceBoundFlow: MutableStateFlow<Boolean>
 
     private lateinit var webApi: WebApi
 
+    // service connection object to deal with the (dis)connected service
     private val connection = object : ServiceConnection {
 
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
@@ -40,20 +45,25 @@ class MainActivity : AppCompatActivity() {
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             serviceBoundFlow.value = false
+            pacetifyService = null
         }
     }
 
+    // bind to the already running service
     fun bindService() {
         Intent(this, PacetifyService::class.java).also { intent ->
             bindService(intent, connection, 0)
         }
     }
 
+    // unbind from the running service
     fun unbindService() {
         unbindService(connection)
         serviceBoundFlow.value = false
     }
 
+    // importing songs from playlist and other spotify web API dependent functions are only
+    // delegated to the webApi
     fun addSongsFromPlaylist(playlist: Playlist) {
         webApi.addSongsFromPlaylist(playlist, lifecycleScope)
     }
@@ -81,6 +91,16 @@ class MainActivity : AppCompatActivity() {
         Intent(this, PacetifyService::class.java).also {
             this.stopService(it)
         }
+    }
+
+    fun notifyServiceSettings() {
+        if (serviceBoundFlow.value)
+            pacetifyService?.notifySettingsChanged()
+    }
+
+    fun notifyServicePlaylists() {
+        if (serviceBoundFlow.value)
+            pacetifyService?.notifyPlaylistsChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

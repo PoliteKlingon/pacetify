@@ -15,6 +15,7 @@ abstract class PacetifyDatabase :RoomDatabase() {
         @Volatile
         private var INSTANCE: PacetifyDatabase? = null
 
+        //make this class a singleton
         fun getInstance(context: Context): PacetifyDatabase {
             synchronized(this) {
                 return INSTANCE ?: Room.databaseBuilder(

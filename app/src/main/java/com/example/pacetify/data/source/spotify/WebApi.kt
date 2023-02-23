@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -22,12 +23,17 @@ import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
 
+/**
+ * A singleton class for interacting with the spotify web API.
+ * It can connect to the API, authorize and then import playlists and individual songs.
+ */
 class WebApi(val activity: MainActivity) {
 
     companion object {
         @Volatile
         private var INSTANCE: WebApi? = null
 
+        // make this class a singleton
         fun getInstance(activity: MainActivity): WebApi {
             synchronized(this) {
                 return INSTANCE ?: WebApi(activity).also {
@@ -46,6 +52,8 @@ class WebApi(val activity: MainActivity) {
 
     private var ongoingRequestsCount = 0
 
+    // As soon as the user connects to the internet, we want to connect to the Api, but no sooner.
+    // We also wish to disconnect when the internet becomes unavailable.
     private var connectivityManager: ConnectivityManager =
         activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private var networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -66,9 +74,12 @@ class WebApi(val activity: MainActivity) {
     }
 
     init {
+        // register the just created callback
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
+        //TODO this should be unregistered onDestroy - is it?
     }
 
+    // create a launcher for the Spotify Auth activity
     private var resultLauncher: ActivityResultLauncher<Intent> =
         activity.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -89,6 +100,7 @@ class WebApi(val activity: MainActivity) {
 
     private var dao = PacetifyDatabase.getInstance(activity).pacetifyDao
 
+    // request token for the web API
     private fun requestToken(activity: MainActivity) {
         val request: AuthorizationRequest =
             AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI)
@@ -113,7 +125,15 @@ class WebApi(val activity: MainActivity) {
         return ongoingRequestsCount > 0
     }
 
+    // importing songs from the just created playlist
+    // this function only gets the total count of tracks in the playlist
     fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope) {
+        if (mAccessToken == null) {
+            Toast.makeText(activity, "Cannot import songs, please connect to the " +
+                    "internet and try again", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/playlists/${playlist.id}/tracks")
             .addHeader("Authorization", "Bearer $mAccessToken")
@@ -135,7 +155,7 @@ class WebApi(val activity: MainActivity) {
                     val totalItems = jsonObject.getString("total").toInt()
                     var currentItems = 0
                     while (currentItems < totalItems) {
-                        //As the web API does support getting at most 50 results at a time,
+                        // As the web API does support getting at most 50 results at a time,
                         // we have to split the query
                         addLimitedSongsFromPlaylist(playlist, currentItems, 50, lifecycleScope)
                         currentItems += 50
@@ -148,6 +168,7 @@ class WebApi(val activity: MainActivity) {
         })
     }
 
+    // this function gets the songUris from the playlist - 50 at a time
     private fun addLimitedSongsFromPlaylist(playlist: Playlist, offset: Int, limit: Int, lifecycleScope: LifecycleCoroutineScope) {
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/playlists/${playlist.id}/tracks?offset=$offset&limit=$limit")
@@ -183,6 +204,7 @@ class WebApi(val activity: MainActivity) {
         })
     }
 
+    // this function creates Songs with basic info from the uris - 50 at a time
     private fun addMultipleSongsWithName(songUris: List<String>, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
         val songIds = songUris.map { songUri -> songUri.takeLastWhile { ch -> ch != ':' } }
         val request: Request = Request.Builder()
@@ -227,6 +249,7 @@ class WebApi(val activity: MainActivity) {
         })
     }
 
+    // this function adds the bpm to multiple songs - 50 at a time
     private fun addMultipleSongs(songs: List<Song>, lifecycleScope: LifecycleCoroutineScope) {
         val songIds = songs.map { song -> song.uri.takeLastWhile { ch -> ch != ':' } }
         val request: Request = Request.Builder()
@@ -273,7 +296,15 @@ class WebApi(val activity: MainActivity) {
         })
     }
 
+    // import a single song
+    // get the basic info about the song
     fun addSongWithName(songId: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
+        if (mAccessToken == null) {
+            Toast.makeText(activity, "Cannot add song, please connect to the " +
+                    "internet and try again", Toast.LENGTH_LONG).show()
+            return
+        }
+
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/tracks/$songId")
             .addHeader("Authorization", "Bearer $mAccessToken")
@@ -307,6 +338,7 @@ class WebApi(val activity: MainActivity) {
         })
     }
 
+    // get the bpm of the song and create it
     private fun addSong(songUri: String, playlistName: String, songName: String, artistName: String, lifecycleScope: LifecycleCoroutineScope) {
         val songId = songUri.takeLastWhile { ch -> ch != ':' }
         val request: Request = Request.Builder()

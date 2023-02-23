@@ -15,5 +15,13 @@ class UriUtils {
                     (uri.matches(Regex("https://open.spotify.com/track/[^/]*"))
                             || uri.matches(Regex("https://open.spotify.com/user/[^/]*/track/[^/]*")))
         }
+
+        fun extractIdFromUri(uri: String): String {
+            var id = uri.takeLastWhile { ch -> ch != '/' }
+            if (id.contains('?')) {
+                id = id.takeWhile { ch -> ch != '?' }
+            }
+            return id
+        }
     }
 }

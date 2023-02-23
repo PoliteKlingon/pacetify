@@ -20,16 +20,24 @@ import com.example.pacetify.R
 import com.example.pacetify.databinding.FragmentHomeBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import java.util.concurrent.CancellationException
 
+/**
+ * The main fragment of the app - here the user can start the service and then their cadence,
+ * currently played song and other running info like resting time left is displayed. The user
+ * can also skip a song.
+ */
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
 
-    private var cadenceFlow: MutableStateFlow<String>? = null
-    private var homeTextFlow: MutableStateFlow<String>? = null
-    private var songNameFlow: MutableStateFlow<String>? = null
+    // These stateFlows will flow from the service and carry all the information.
+    // Each has its observer to be able to cancel the flow collecting
+    private var cadenceFlow: StateFlow<String>? = null
+    private var homeTextFlow: StateFlow<String>? = null
+    private var songNameFlow: StateFlow<String>? = null
 
     private var cadenceFlowObserver: Job? = null
     private var homeTextFlowObserver: Job? = null
@@ -42,8 +50,11 @@ class HomeFragment : Fragment() {
         binding.onOff.text = getString(R.string.service_on)
 
         if (mainActivity.pacetifyService == null) {
+            Log.w("Home Fragment", "The just connected service is null, aborting...")
             return
         }
+
+        // obtain the flows
         val flows = mainActivity.pacetifyService?.getFlows()
         if (flows != null) {
             cadenceFlow = flows[0]
@@ -62,6 +73,7 @@ class HomeFragment : Fragment() {
         binding.displayCadence.text = cadenceFlow?.value
         binding.displaySong.text = songNameFlow?.value
 
+        // observe the flows
         if (cadenceFlowObserver == null) {
             cadenceFlowObserver = lifecycleScope.launchWhenStarted {
                 cadenceFlow?.collectLatest {
@@ -104,6 +116,7 @@ class HomeFragment : Fragment() {
         homeTextFlow = null
         songNameFlow = null
 
+        // cancel the flow observing
         cadenceFlowObserver?.cancel(CancellationException())
         cadenceFlowObserver = null
         homeTextFlowObserver?.cancel(CancellationException())
@@ -128,8 +141,8 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val homeViewModel =
-            ViewModelProvider(this).get(HomeViewModel::class.java)
+        /*val homeViewModel =
+            ViewModelProvider(this).get(HomeViewModel::class.java)*/
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
@@ -142,10 +155,11 @@ class HomeFragment : Fragment() {
             }
         }
 
-        val textView: TextView = binding.textHome
+        /*val textView: TextView = binding.textHome
         homeViewModel.text.observe(viewLifecycleOwner) {
             textView.text = /*it*/ getString(R.string.home_text_default)
-        }
+        }*/
+        binding.textHome.text = getString(R.string.home_text_default)
 
         binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
 
@@ -157,6 +171,7 @@ class HomeFragment : Fragment() {
             }
         }
 
+        // service manipulation
         binding.onOff.setOnClickListener {
             if (mainActivity.serviceBoundFlow.value) {
                 mainActivity.unbindService()
@@ -173,6 +188,7 @@ class HomeFragment : Fragment() {
 
         if (songNameFlow == null) binding.displaySong.text = ""
 
+        // Here we need to obtain the permission to read the user's activity
         val requestPermission = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->

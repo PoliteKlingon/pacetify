@@ -17,15 +17,17 @@ import com.example.pacetify.data.source.database.PacetifyDao
 import com.example.pacetify.util.UriUtils
 import kotlinx.coroutines.launch
 
+/**
+ * A dialog for adding a playlist. Name and URL are required, checked and then the playlist and
+ * its songs are imported.
+ */
 class AddPlaylistDialog(
-    val activity: Activity,
+    val mainActivity: MainActivity,
     val playlists: MutableList<Playlist>,
     val dao: PacetifyDao,
     val adapter: PlaylistAdapter,
-    val serviceBound: Boolean,
-    val pacetifyService: PacetifyService?,
     val lifecycle: Lifecycle
-): Dialog(activity){
+): Dialog(mainActivity){
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +36,7 @@ class AddPlaylistDialog(
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(R.layout.dialog_add_playlist)
 
+        // references to the view elements
         val etNewPlaylistName = findViewById<EditText>(R.id.etNewPlaylistName)
         val etNewPlaylistUri = findViewById<EditText>(R.id.etNewPlaylistUri)
         val btnAddPlaylist = findViewById<Button>(R.id.btnAddPlaylist)
@@ -43,34 +46,30 @@ class AddPlaylistDialog(
             val uri = etNewPlaylistUri.text.toString()
 
             if (name.isEmpty())
-                Toast.makeText(activity, "Name can not be empty", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "Name can not be empty", Toast.LENGTH_LONG).show()
             else if (uri.isEmpty())
-                Toast.makeText(activity, "URL can not be empty", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (playlists.map { p -> p.name } .contains(name))
-                Toast.makeText(activity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifyPlaylistUri(uri))
-                Toast.makeText(activity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
-            else if (((activity as MainActivity?)?.isTokenAcquired()) != true) //is null or false
-                Toast.makeText(activity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
+            else if (((mainActivity as MainActivity?)?.isTokenAcquired()) != true) //is null or false
+                Toast.makeText(mainActivity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
-                var id = uri.takeLastWhile { ch -> ch != '/' }
-                if (id.contains('?')) {
-                    id = id.takeWhile { ch -> ch != '?' }
-                }
-
+                val id = UriUtils.extractIdFromUri(uri)
                 val playlist = Playlist(id, name)
 
-                (activity as MainActivity?)?.addSongsFromPlaylist(playlist)
+                // import songs form the playlist
+                (mainActivity as MainActivity?)?.addSongsFromPlaylist(playlist)
 
                 playlists.add(playlist)
                 adapter.notifyItemInserted(playlists.size - 1)
                 etNewPlaylistName.setText("")
                 etNewPlaylistUri.setText("")
 
-
                 lifecycle.coroutineScope.launch {
                     dao.insertPlaylist(playlist)
-                    if (serviceBound) pacetifyService?.notifyPlaylistsChanged()
+                    mainActivity.notifyServicePlaylists()
                 }
 
                 dismiss()

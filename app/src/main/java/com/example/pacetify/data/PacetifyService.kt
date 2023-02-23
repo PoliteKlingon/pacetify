@@ -28,9 +28,14 @@ import kotlin.math.abs
 import kotlin.random.Random
 
 
+/**
+ * This is the service that contains the running functionality - calculates cadence and controls
+ * the Spotify playback.
+ */
 class PacetifyService : Service(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
+    // We need the audio manager for the fake crossfade
     private lateinit var audioManager: AudioManager
 
     private var stepSensorRunning = false
@@ -39,19 +44,24 @@ class PacetifyService : Service(), SensorEventListener {
     private var cadence = 0 // average from last couple of seconds
     private var currentCadence = 0f // exact current cadence
 
+    // step count history + size and current idx for storing
     private lateinit var stepsPrevious: Array<Float>
     private var stepsPreviousIdx = 0
     private var stepsPreviousSize = 5
+    // the same for cadence
     private lateinit var cadencePrevious: Array<Float>
     private var cadencePreviousIdx = 0
     private var cadencePreviousSize = 10
 
+    // handler for our clock
     lateinit var mainHandler: Handler
 
+    // flows for passing info to the UI
     private var cadenceFlow = MutableStateFlow("")
     private var homeTextFlow = MutableStateFlow("")
     private var songNameFlow = MutableStateFlow("")
 
+    // Spotify app remote
     private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
     private val REDIRECT_URI = "com.example.pacetify://callback"
     private var mSpotifyAppRemote: SpotifyAppRemote? = null
@@ -59,16 +69,18 @@ class PacetifyService : Service(), SensorEventListener {
     private var dao: PacetifyDao? = null
     private var settingsFile: SettingsPreferenceFile? = null
 
+    // variables for the user's settings to be loaded into
     private var motivate = false
     private var rest = false
     private var restTime = 20
+
     private val MOTIVATE_ADDITION = 3 // bpm to add if user wants to be motivated
     private val RUNNING_THRESHOLD = 80 // lowest bpm that is considered to be running
     private val SONG_MINIMAL_SECONDS = 15 // lowest amount of seconds to be played from a song before skipping
     private val INITIAL_CADENCE = 150 // the bpm of the first played song  //TODO into settings?
     private val FAKE_CROSSFADE_DURATION_MS: Long = 1000 // duration of fake volume crossfade in ms
     private var lastRunningBpm = INITIAL_CADENCE // used for rest functionality
-    private var wasResting = false
+    private var wasResting = false // information if the user was resting during the last song
     private var currentRestingTime = restTime
     private var currentlyResting = false
 
@@ -77,7 +89,7 @@ class PacetifyService : Service(), SensorEventListener {
     private var playerStateSubscription: Subscription<PlayerState>? = null
     private var timeToSongEnd: Long = 15
     private var timePlayedFromSong = 0
-    private var currentBpm = 0
+    private var currentBpm = 0 // the bpm of the current song
     private var notificationManager: NotificationManager? = null
     private var notification: Notification.Builder? = null
 
@@ -121,6 +133,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         if (stepSensor == null) {
             Toast.makeText(applicationContext, "No sensor detected on this device", Toast.LENGTH_LONG).show()
+            this.stopSelf()
         } else {
             stepSensorRunning = true
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
@@ -134,18 +147,18 @@ class PacetifyService : Service(), SensorEventListener {
 
         connectToSpotifyAppRemote()
 
+        // if the service gets destroyed by the system, restart it
         return START_REDELIVER_INTENT
     }
 
     private fun makeServiceForeground() {
-        // we have to do this so Android Oreo and higher does not kill the service
+        // We have to do this so Android Oreo and higher does not kill the service.
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Create the NotificationChannel
             val mChannel = NotificationChannel("PacetifyChannel", "PacetifyChannel", NotificationManager.IMPORTANCE_LOW)
             mChannel.description = "This is an Pacetify notification channel"
-            // Register the channel with the system; you can't change the importance
-            // or other notification behaviors after this
+            // Register the channel with the system
             notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             notificationManager!!.createNotificationChannel(mChannel)
 
@@ -164,8 +177,9 @@ class PacetifyService : Service(), SensorEventListener {
                     .setContentText("Let's run!")
                     .setContentIntent(pendingIntent)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
-
-            startForeground(1, notification!!.build())
+                    .also {
+                        startForeground(1, it.build())
+                    }
         }
     }
 
@@ -177,6 +191,7 @@ class PacetifyService : Service(), SensorEventListener {
             .setRequiredFeatures(listOf())
             .build()
 
+        // Perform the connection
         SpotifyAppRemote.connect(this, connectionParams,
             object : Connector.ConnectionListener {
                 override fun onConnected(spotifyAppRemote: SpotifyAppRemote) {
@@ -199,7 +214,7 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     fun onSpotifyAppRemoteConnected() {
-        //display current song
+        //send the current song info into its flow - subscribe to the player state
         playerStateSubscription = mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
             ?.setEventCallback { event ->
                 val track = event.track
@@ -212,6 +227,7 @@ class PacetifyService : Service(), SensorEventListener {
             playSong(chooseSong(INITIAL_CADENCE))
             wasResting = true
 
+            // If the user does not have crossfade enabled, we advice them to do so
             mSpotifyAppRemote?.playerApi?.crossfadeState?.setResultCallback { ev ->
                 if (!ev.isEnabled)
                     Toast.makeText(
@@ -244,9 +260,10 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun calculateCadence() {
         if (stepsPrevious[stepsPreviousIdx] < 1) {
-            stepsPrevious = stepsPrevious.map { totalSteps }.toTypedArray() // quicker start
+            stepsPrevious = stepsPrevious.map { totalSteps }.toTypedArray() // quicker initialization
         }
 
+        //update current indices
         stepsPreviousIdx = if (stepsPreviousIdx == stepsPreviousSize - 1) 0 else stepsPreviousIdx + 1
         cadencePreviousIdx = if (cadencePreviousIdx == cadencePreviousSize - 1) 0 else cadencePreviousIdx + 1
         currentCadence = (totalSteps - stepsPrevious[stepsPreviousIdx]) * (60 / stepsPreviousSize) //convert to per minute
@@ -259,16 +276,20 @@ class PacetifyService : Service(), SensorEventListener {
     private fun updateNotification() {
         if (notification != null) {
             notification!!.setContentText("Your pace is $cadence")
-            notificationManager?.notify(1, notification!!.build())
+                .also {
+                    notificationManager?.notify(1, it.build())
+                }
         }
     }
 
+    // A single tick of the clock - this function is executed every second
     fun tick() {
         calculateCadence()
         cadenceFlow.value = "Cadence: $cadence steps per minute"
 
         updateNotification()
 
+        // We are running, so we remember the current bpm
         if (currentBpm > RUNNING_THRESHOLD) lastRunningBpm = currentBpm
 
         timePlayedFromSong++
@@ -279,7 +300,7 @@ class PacetifyService : Service(), SensorEventListener {
         // we always deal with it in some manner, but it always leads to queueing a new song
         // and we only want that to happen once, therefore it is an "else if" scenario
 
-        if (!isRunning() && !currentlyResting && !wasResting) onStoppedRunning()
+        if (rest && !isRunning() && !currentlyResting && !wasResting) onStoppedRunning()
 
         else if (isRunning() && currentlyResting) onStartedRunning()
 
@@ -332,7 +353,9 @@ class PacetifyService : Service(), SensorEventListener {
     private fun calculateNextSongBpm(): Int {
         return if (!isRunning()) {
             if (rest && currentRestingTime > 0){
-                Random.nextInt(RUNNING_THRESHOLD - 40, RUNNING_THRESHOLD)
+                // return random resting bpm, but not too low - then it would have a tendency to
+                // always choose the slowest song available
+                Random.nextInt(RUNNING_THRESHOLD - 30, RUNNING_THRESHOLD)
             } else lastRunningBpm
         } else {
             cadence + if (motivate) MOTIVATE_ADDITION else 0
@@ -380,7 +403,8 @@ class PacetifyService : Service(), SensorEventListener {
         mSpotifyAppRemote?.playerApi?.pause()
     }
 
-    private fun crossfadeSkip() {
+    // We fake the crossfade skip by lowering the volume, skipping, and then turning it up again.
+    private fun crossfadeSkip() { //TODO ensure this is not called multiple times simultaneously
         val originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         val crossfadeDurationMs = FAKE_CROSSFADE_DURATION_MS
         val crossfadeStepMs = crossfadeDurationMs / 10
@@ -389,7 +413,11 @@ class PacetifyService : Service(), SensorEventListener {
 
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             while (i >= 0) {
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((i / 10f) * originalVolume).toInt(), 0)
+                audioManager.setStreamVolume(
+                    AudioManager.STREAM_MUSIC,
+                    ((i / 10f) * originalVolume).toInt(),
+                    0
+                )
                 delay(crossfadeStepMs)
                 i--
             }
@@ -398,17 +426,23 @@ class PacetifyService : Service(), SensorEventListener {
             mSpotifyAppRemote?.playerApi?.seekTo(1000 * 10)
 
             while (i <= 10) {
-                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, ((i / 10f) * originalVolume).toInt(), 0)
+                audioManager.setStreamVolume(
+                    AudioManager.STREAM_MUSIC,
+                    ((i / 10f) * originalVolume).toInt(),
+                    0
+                )
                 delay(crossfadeStepMs)
                 i++
             }
         }
     }
 
+    // this is called by the activity when the playlists have been changed
     fun notifyPlaylistsChanged() {
         loadSongs()
     }
 
+    // this is called by the activity when the settings have been changed
     fun notifySettingsChanged() {
         loadSettings()
     }
@@ -418,7 +452,7 @@ class PacetifyService : Service(), SensorEventListener {
             motivate = settingsFile!!.motivate
             rest = settingsFile!!.rest
             restTime = settingsFile!!.restTime
-            currentRestingTime = restTime
+            currentRestingTime = if (rest) restTime else 0
         }
     }
 
@@ -435,6 +469,7 @@ class PacetifyService : Service(), SensorEventListener {
         }
     }
 
+    // choosing the song based on the desired bpm
     private fun chooseSong(bpm: Int): Song? {
         if (songs.isEmpty()) return null
         val songIndex = binarySearchSongIndex(bpm, 0, songs.size - 1)

@@ -13,12 +13,15 @@ import com.example.pacetify.R
 import com.example.pacetify.data.Song
 import com.example.pacetify.util.UriUtils
 
+/**
+ * A dialog for adding a song. URL is required, checked and then the song is imported.
+ */
 class AddSongDialog(
-    val activity: Activity,
+    val mainActivity: MainActivity,
     val songs: MutableList<Song>,
     val lifecycle: Lifecycle,
     val playlistName: String
-): Dialog(activity){
+): Dialog(mainActivity){
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +30,7 @@ class AddSongDialog(
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(R.layout.dialog_add_song)
 
+        // references to the view elements
         val etNewSongUri = findViewById<EditText>(R.id.etNewSongUri)
         val btnAddSong = findViewById<Button>(R.id.btnAddSong)
 
@@ -34,18 +38,17 @@ class AddSongDialog(
             val uri = etNewSongUri.text.toString()
 
             if (uri.isEmpty())
-                Toast.makeText(activity, "URL can not be empty", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifySongUri(uri))
-                Toast.makeText(activity, "Invalid song URL", Toast.LENGTH_LONG).show()
-            else if (((activity as MainActivity?)?.isTokenAcquired()) != true) //is null or false
-                Toast.makeText(activity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "Invalid song URL", Toast.LENGTH_LONG).show()
+            else if (!mainActivity.isTokenAcquired())
+                Toast.makeText(mainActivity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
-                var id = uri.takeLastWhile { ch -> ch != '/' }
-                if (id.contains('?')) {
-                    id = id.takeWhile { ch -> ch != '?' }
-                }
+                val id = UriUtils.extractIdFromUri(uri)
 
-                (activity as MainActivity?)?.addSongWithName(id, playlistName)
+                //import song
+                mainActivity.addSongWithName(id, playlistName)
+                mainActivity.notifyServicePlaylists()
 
                 dismiss()
             }
