@@ -25,7 +25,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.sync.Mutex
 import java.lang.Runnable
-import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -86,14 +85,15 @@ class PacetifyService : Service(), SensorEventListener {
     private var wasResting = false // information if the user was resting during the last song
     private var currentRestingTime = restTime
     private var currentlyResting = false
-    private var currentSongUri = ""
 
     private var songs: Array<Song> = arrayOf()
 
     private var playerStateSubscription: Subscription<PlayerState>? = null
     private var timeToSongEnd: Long = 15
     private var timePlayedFromSong = 0
-    private var currentBpm = 0 // the bpm of the current song
+    private lateinit var currentSong: Song
+    //private var currentSongBpm = 0 // the bpm of the current song
+    //private var currentSongUri = ""
     private var notificationManager: NotificationManager? = null
     private var notification: Notification.Builder? = null
 
@@ -225,7 +225,6 @@ class PacetifyService : Service(), SensorEventListener {
         playerStateSubscription = mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
             ?.setEventCallback { event ->
                 val track = event.track
-                currentSongUri = track.uri
                 songNameFlow.value = "${track.name}\n ${track.artist.name}\n ${track.album.name}"
                 timeToSongEnd = (track.duration - event.playbackPosition) / 1000
             }
@@ -244,8 +243,10 @@ class PacetifyService : Service(), SensorEventListener {
             CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
                 // play the first song
                 songsLoadingMutex.lock()
-                playSong(songs[chooseSongIdx(INITIAL_CADENCE)])
+                val song = songs[chooseSongIdx(INITIAL_CADENCE)]
                 songsLoadingMutex.unlock()
+                playSong(song)
+                currentSong = song
                 wasResting = true
 
                 startTicking()
@@ -302,7 +303,7 @@ class PacetifyService : Service(), SensorEventListener {
         updateNotification()
 
         // We are running, so we remember the current bpm
-        if (currentBpm > RUNNING_THRESHOLD) lastRunningBpm = currentBpm
+        if (currentSong.bpm > RUNNING_THRESHOLD) lastRunningBpm = currentSong.bpm
 
         timePlayedFromSong++
         timeToSongEnd--
@@ -318,7 +319,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         else if (isRunning() && currentCadence > RUNNING_THRESHOLD
             && timePlayedFromSong > SONG_MINIMAL_SECONDS
-            && (abs(cadence - currentBpm) > 5)) //TODO maybe some smarter way? - more consistent speed increase leads to song change
+            && (abs(cadence - currentSong.bpm) > 5)) //TODO maybe some smarter way? - more consistent speed increase leads to song change
             skipSong()
 
         else if (timeToSongEnd <= 10) queueSong()
@@ -336,7 +337,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun updateHomeTextFlow() {
         homeTextFlow.value =
-            "currentBpm: $currentBpm\n" +
+            "currentBpm: ${currentSong.bpm}\n" +
                     "wasResting: $wasResting\n" +
                     "lastRunningBpm: $lastRunningBpm\n" +
                     "timePlayedFromSong: $timePlayedFromSong\n" +
@@ -385,7 +386,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     fun playSong(song: Song) {
         mSpotifyAppRemote?.playerApi?.play(song.uri)
-        currentBpm = song.bpm
+        currentSong = song
     }
 
     private fun queueSong() {
@@ -399,7 +400,7 @@ class PacetifyService : Service(), SensorEventListener {
             var songIdx = chooseSongIdx(nextBpm)
 
             // if there is more than one song, do not play the same song twice
-            if (currentSongUri == songs[songIdx].uri) {
+            if (currentSong.uri == songs[songIdx].uri) {
                 if (songIdx < songs.size - 1) songIdx++
                 else if (songIdx > 0) songIdx--
             }
@@ -407,7 +408,7 @@ class PacetifyService : Service(), SensorEventListener {
             songsLoadingMutex.unlock()
 
             mSpotifyAppRemote?.playerApi?.queue(song.uri)
-            currentBpm = song.bpm
+            currentSong = song
         }
 
         timePlayedFromSong = 0
@@ -420,9 +421,13 @@ class PacetifyService : Service(), SensorEventListener {
 
     // We fake the crossfade skip by lowering the volume, skipping, and then turning it up again.
     private fun crossfadeSkip() {
+        // using the crossfadeSkipMutex ensures that there are no concurrent crossfades
+        // - that would cause unwanted behaviour
+        // if we are already skipping, we do not wish to attempt to skip again
+        if (crossfadeMutex.isLocked) return
+
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-            // using this mutex ensures that there are no concurrent crossfades - that would cause
-            // unwanted behaviour
+            // locking means that we are currently skipping
             crossfadeMutex.lock()
 
             val originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
@@ -441,7 +446,8 @@ class PacetifyService : Service(), SensorEventListener {
                 i--
             }
 
-            mSpotifyAppRemote?.playerApi?.skipNext()
+            //mSpotifyAppRemote?.playerApi?.skipNext()
+            playSong(currentSong)
             mSpotifyAppRemote?.playerApi?.seekTo(1000 * 10)
 
             while (i <= 10) {
@@ -453,7 +459,7 @@ class PacetifyService : Service(), SensorEventListener {
                 delay(crossfadeStepMs)
                 i++
             }
-
+            // we have finished the skipping
             crossfadeMutex.unlock()
         }
     }
