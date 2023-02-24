@@ -23,7 +23,9 @@ import com.spotify.protocol.client.Subscription
 import com.spotify.protocol.types.PlayerState
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.sync.Mutex
 import java.lang.Runnable
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.math.abs
 import kotlin.random.Random
 
@@ -79,10 +81,12 @@ class PacetifyService : Service(), SensorEventListener {
     private val SONG_MINIMAL_SECONDS = 15 // lowest amount of seconds to be played from a song before skipping
     private val INITIAL_CADENCE = 150 // the bpm of the first played song  //TODO into settings?
     private val FAKE_CROSSFADE_DURATION_MS: Long = 1000 // duration of fake volume crossfade in ms
+    private val crossfadeMutex = Mutex() // mutex for the crossfade locking
     private var lastRunningBpm = INITIAL_CADENCE // used for rest functionality
     private var wasResting = false // information if the user was resting during the last song
     private var currentRestingTime = restTime
     private var currentlyResting = false
+    private var currentSongUri = ""
 
     private var songs: Array<Song> = arrayOf()
 
@@ -94,6 +98,9 @@ class PacetifyService : Service(), SensorEventListener {
     private var notification: Notification.Builder? = null
 
     private var shouldStartPlaying = true
+
+    // this mutex is for handling the concurrency of reloading songs and picking a song
+    private var songsLoadingMutex = Mutex()
 
     inner class PacetifyBinder : Binder() {
         fun getService() = this@PacetifyService
@@ -218,26 +225,31 @@ class PacetifyService : Service(), SensorEventListener {
         playerStateSubscription = mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
             ?.setEventCallback { event ->
                 val track = event.track
+                currentSongUri = track.uri
                 songNameFlow.value = "${track.name}\n ${track.artist.name}\n ${track.album.name}"
                 timeToSongEnd = (track.duration - event.playbackPosition) / 1000
             }
 
+        // If the user does not have crossfade enabled, we advice them to do so
+        mSpotifyAppRemote?.playerApi?.crossfadeState?.setResultCallback { ev ->
+            if (!ev.isEnabled)
+                Toast.makeText(
+                    applicationContext,
+                    "Enabling crossfade in spotify settings leads to better experience",
+                    Toast.LENGTH_LONG
+                ).show()
+        }
+
         if (shouldStartPlaying) {
-            //play first song
-            playSong(chooseSong(INITIAL_CADENCE))
-            wasResting = true
+            CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                // play the first song
+                songsLoadingMutex.lock()
+                playSong(songs[chooseSongIdx(INITIAL_CADENCE)])
+                songsLoadingMutex.unlock()
+                wasResting = true
 
-            // If the user does not have crossfade enabled, we advice them to do so
-            mSpotifyAppRemote?.playerApi?.crossfadeState?.setResultCallback { ev ->
-                if (!ev.isEnabled)
-                    Toast.makeText(
-                        applicationContext,
-                        "Enabling crossfade in spotify settings leads to better experience",
-                        Toast.LENGTH_LONG
-                    ).show()
+                startTicking()
             }
-
-            startTicking()
         }
     }
 
@@ -371,11 +383,7 @@ class PacetifyService : Service(), SensorEventListener {
         crossfadeSkip()
     }
 
-    fun playSong(song: Song?) {
-        if (song == null) {
-            Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
-            return
-        }
+    fun playSong(song: Song) {
         mSpotifyAppRemote?.playerApi?.play(song.uri)
         currentBpm = song.bpm
     }
@@ -385,15 +393,22 @@ class PacetifyService : Service(), SensorEventListener {
         if (!isRunning() && wasResting) {
             nextBpm = lastRunningBpm //do not rest again when user was just resting
         }
-        val song = chooseSong(nextBpm)
 
-        if (song == null) {
-            Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
-            return
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            songsLoadingMutex.lock()
+            var songIdx = chooseSongIdx(nextBpm)
+
+            // if there is more than one song, do not play the same song twice
+            if (currentSongUri == songs[songIdx].uri) {
+                if (songIdx < songs.size - 1) songIdx++
+                else if (songIdx > 0) songIdx--
+            }
+            val song = songs[songIdx]
+            songsLoadingMutex.unlock()
+
+            mSpotifyAppRemote?.playerApi?.queue(song.uri)
+            currentBpm = song.bpm
         }
-
-        mSpotifyAppRemote?.playerApi?.queue(song.uri)
-        currentBpm = song.bpm
 
         timePlayedFromSong = 0
         if (wasResting) wasResting = false
@@ -404,14 +419,18 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     // We fake the crossfade skip by lowering the volume, skipping, and then turning it up again.
-    private fun crossfadeSkip() { //TODO ensure this is not called multiple times simultaneously
-        val originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        val crossfadeDurationMs = FAKE_CROSSFADE_DURATION_MS
-        val crossfadeStepMs = crossfadeDurationMs / 10
-
-        var i = 10
-
+    private fun crossfadeSkip() {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            // using this mutex ensures that there are no concurrent crossfades - that would cause
+            // unwanted behaviour
+            crossfadeMutex.lock()
+
+            val originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            val crossfadeDurationMs = FAKE_CROSSFADE_DURATION_MS
+            val crossfadeStepMs = crossfadeDurationMs / 10
+
+            var i = 10
+
             while (i >= 0) {
                 audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
@@ -434,6 +453,8 @@ class PacetifyService : Service(), SensorEventListener {
                 delay(crossfadeStepMs)
                 i++
             }
+
+            crossfadeMutex.unlock()
         }
     }
 
@@ -458,7 +479,10 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun loadSongs() {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            homeTextFlow.value = "Loading songs..."
+            songsLoadingMutex.lock()
             if (dao != null) songs = dao!!.getSongs()
+            songsLoadingMutex.unlock()
         }
     }
 
@@ -470,8 +494,12 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     // choosing the song based on the desired bpm
-    private fun chooseSong(bpm: Int): Song? {
-        if (songs.isEmpty()) return null
+    private fun chooseSongIdx(bpm: Int): Int {
+        if (songs.isEmpty()) {
+            Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
+            stopSelf()
+            return -1
+        }
         val songIndex = binarySearchSongIndex(bpm, 0, songs.size - 1)
         var startIndex = songIndex
         var stopIndex = songIndex
@@ -485,7 +513,7 @@ class PacetifyService : Service(), SensorEventListener {
             stopIndex++
         }
 
-        return songs[Random.nextInt(startIndex, stopIndex + 1)] //stop is exclusive
+        return Random.nextInt(startIndex, stopIndex + 1) //stop is exclusive
     }
 
     private fun binarySearchSongIndex(targetBpm: Int, start: Int, stop: Int): Int {
