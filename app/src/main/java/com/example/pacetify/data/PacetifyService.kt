@@ -312,7 +312,7 @@ class PacetifyService : Service(), SensorEventListener {
         if (currentlyResting) currentRestingTime--
 
         // here come all the reasons why should a song be skipped
-        // we always deal with it in some manner, but it always leads to queueing a new song
+        // we always deal with it in some manner, but it always leads to selecting a new song
         // and we only want that to happen once, therefore it is an "else if" scenario
 
         if (rest && !isRunning() && !currentlyResting && !wasResting) onStoppedRunning()
@@ -388,7 +388,7 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     fun skipSong() {
-        findNextSong(queue = false) // select the next song and save it in the currentSong variable
+        findNextSong() // select the next song and save it in the currentSong variable
         crossfadeSkip() // play the currentSong with crossfade
     }
 
