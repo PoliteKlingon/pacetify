@@ -39,6 +39,8 @@ class PacetifyService : Service(), SensorEventListener {
     // We need the audio manager for the fake crossfade
     private lateinit var audioManager: AudioManager
 
+    private var isCrossfadeEnabled = false
+
     private var stepSensorRunning = false
     private var totalSteps = 0f
 
@@ -92,8 +94,6 @@ class PacetifyService : Service(), SensorEventListener {
     private var timeToSongEnd: Long = 15
     private var timePlayedFromSong = 0
     private lateinit var currentSong: Song
-    //private var currentSongBpm = 0 // the bpm of the current song
-    //private var currentSongUri = ""
     private var notificationManager: NotificationManager? = null
     private var notification: Notification.Builder? = null
 
@@ -231,7 +231,9 @@ class PacetifyService : Service(), SensorEventListener {
 
         // If the user does not have crossfade enabled, we advice them to do so
         mSpotifyAppRemote?.playerApi?.crossfadeState?.setResultCallback { ev ->
-            if (!ev.isEnabled)
+            if (ev.isEnabled)
+                isCrossfadeEnabled = true
+            else
                 Toast.makeText(
                     applicationContext,
                     "Enabling crossfade in spotify settings leads to better experience",
@@ -322,7 +324,13 @@ class PacetifyService : Service(), SensorEventListener {
             && (abs(cadence - currentSong.bpm) > 5)) //TODO maybe some smarter way? - more consistent speed increase leads to song change
             skipSong()
 
-        else if (timeToSongEnd <= 10) queueSong()
+        else if (timeToSongEnd <= 10) {
+            // Here we are at the end of the song, so if the user has crossfade enabled in their app,
+            // we simply queue the next song and let Spotify handle the crossfade. Otherwise, we do
+            // our fake crossfade.
+            if (isCrossfadeEnabled) findNextSong(queue = true)
+            else skipSong()
+        }
 
         else if (currentRestingTime < 0) { // resting over
             Log.d("PacetifyService", "resting over!")
@@ -380,8 +388,8 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     fun skipSong() {
-        queueSong()
-        crossfadeSkip()
+        findNextSong(queue = false) // select the next song and save it in the currentSong variable
+        crossfadeSkip() // play the currentSong with crossfade
     }
 
     fun playSong(song: Song) {
@@ -389,7 +397,9 @@ class PacetifyService : Service(), SensorEventListener {
         currentSong = song
     }
 
-    private fun queueSong() {
+    // This function finds the next song to be played and saves it into the currentSong variable.
+    // Additionally, it can enqueue the song in Spotify if the argument 'queue' is set to true.
+    private fun findNextSong(queue: Boolean = false) {
         var nextBpm = calculateNextSongBpm()
         if (!isRunning() && wasResting) {
             nextBpm = lastRunningBpm //do not rest again when user was just resting
@@ -407,7 +417,7 @@ class PacetifyService : Service(), SensorEventListener {
             val song = songs[songIdx]
             songsLoadingMutex.unlock()
 
-            mSpotifyAppRemote?.playerApi?.queue(song.uri)
+            if (queue) mSpotifyAppRemote?.playerApi?.queue(song.uri)
             currentSong = song
         }
 
@@ -446,7 +456,6 @@ class PacetifyService : Service(), SensorEventListener {
                 i--
             }
 
-            //mSpotifyAppRemote?.playerApi?.skipNext()
             playSong(currentSong)
             mSpotifyAppRemote?.playerApi?.seekTo(1000 * 10)
 
