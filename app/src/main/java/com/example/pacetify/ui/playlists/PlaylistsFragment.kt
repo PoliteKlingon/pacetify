@@ -99,7 +99,7 @@ class PlaylistsFragment : Fragment() {
     // count is updated
     private fun insertedPlaylist(adapter: PlaylistAdapter) {
         lifecycleScope.launch {
-            while((activity as MainActivity?)?.isNetworkBeingUsed() == true) {
+            while((activity as MainActivity?)?.webApi?.isNetworkBeingUsed() == true) {
                 delay(500) //TODO is there a better way?
                 adapter.notifyDataSetChanged()
             }

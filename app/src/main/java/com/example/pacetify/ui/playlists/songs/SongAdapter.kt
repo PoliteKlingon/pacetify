@@ -42,7 +42,7 @@ class SongAdapter(
 
             // display a dialog to ensure that the user wants to delete the song
             btnDelete.setOnClickListener {
-                AlertDialog.Builder(mainActivity!!)
+                AlertDialog.Builder(mainActivity)
                     .setTitle("Are you sure?")
                     .setMessage("Do you want to delete \"${currentSong.name}\"?")
                     .setNegativeButton("Cancel") { dialog, _ ->

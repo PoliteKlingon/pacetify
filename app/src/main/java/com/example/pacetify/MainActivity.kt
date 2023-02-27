@@ -8,13 +8,11 @@ import android.os.IBinder
 import android.util.Log
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.example.pacetify.data.PacetifyService
-import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.source.spotify.WebApi
 import com.example.pacetify.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +28,7 @@ class MainActivity : AppCompatActivity() {
     // This is a flow in which we will store whether the service is bound
     lateinit var serviceBoundFlow: MutableStateFlow<Boolean>
 
-    private lateinit var webApi: WebApi
+    lateinit var webApi: WebApi
 
     // service connection object to deal with the (dis)connected service
     private val connection = object : ServiceConnection {
@@ -60,24 +58,6 @@ class MainActivity : AppCompatActivity() {
     fun unbindService() {
         unbindService(connection)
         serviceBoundFlow.value = false
-    }
-
-    // importing songs from playlist and other spotify web API dependent functions are only
-    // delegated to the webApi
-    fun addSongsFromPlaylist(playlist: Playlist) {
-        webApi.addSongsFromPlaylist(playlist, lifecycleScope)
-    }
-
-    fun addSongWithName(songId: String, playlistName: String) {
-        webApi.addSongWithName(songId, playlistName, lifecycleScope)
-    }
-
-    fun isTokenAcquired(): Boolean {
-        return webApi.isTokenAcquired()
-    }
-
-    fun isNetworkBeingUsed(): Boolean {
-        return webApi.isNetworkBeingUsed()
     }
 
     fun startService(tick: Boolean = true) {

@@ -21,7 +21,6 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tvMotivateMeDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
@@ -49,7 +48,6 @@
         app:layout_constraintTop_toBottomOf="@id/swMotivate" />
 
     <TextView
-        android:id="@+id/tvRestDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"

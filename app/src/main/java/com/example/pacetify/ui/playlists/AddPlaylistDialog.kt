@@ -1,6 +1,5 @@
 package com.example.pacetify.ui.playlists
 
-import android.app.Activity
 import android.app.Dialog
 import android.os.Bundle
 import android.view.Window
@@ -11,7 +10,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.coroutineScope
 import com.example.pacetify.MainActivity
 import com.example.pacetify.R
-import com.example.pacetify.data.PacetifyService
 import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.source.database.PacetifyDao
 import com.example.pacetify.util.UriUtils
@@ -22,10 +20,10 @@ import kotlinx.coroutines.launch
  * its songs are imported.
  */
 class AddPlaylistDialog(
-    val mainActivity: MainActivity,
+    private val mainActivity: MainActivity,
     val playlists: MutableList<Playlist>,
-    val dao: PacetifyDao,
-    val adapter: PlaylistAdapter,
+    private val dao: PacetifyDao,
+    private val adapter: PlaylistAdapter,
     val lifecycle: Lifecycle
 ): Dialog(mainActivity){
 
@@ -53,14 +51,14 @@ class AddPlaylistDialog(
                 Toast.makeText(mainActivity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifyPlaylistUri(uri))
                 Toast.makeText(mainActivity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
-            else if (((mainActivity as MainActivity?)?.isTokenAcquired()) != true) //is null or false
+            else if (((mainActivity as MainActivity?)?.webApi?.isTokenAcquired()) != true) //is null or false
                 Toast.makeText(mainActivity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
                 val id = UriUtils.extractIdFromUri(uri)
                 val playlist = Playlist(id, name)
 
                 // import songs form the playlist
-                (mainActivity as MainActivity?)?.addSongsFromPlaylist(playlist)
+                (mainActivity as MainActivity?)?.webApi?.addSongsFromPlaylist(playlist, lifecycle.coroutineScope)
 
                 playlists.add(playlist)
                 adapter.notifyItemInserted(playlists.size - 1)

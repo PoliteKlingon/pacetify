@@ -1,6 +1,5 @@
 package com.example.pacetify.ui.playlists.songs
 
-import android.app.Activity
 import android.app.Dialog
 import android.os.Bundle
 import android.view.Window
@@ -8,6 +7,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.coroutineScope
 import com.example.pacetify.MainActivity
 import com.example.pacetify.R
 import com.example.pacetify.data.Song
@@ -41,13 +41,13 @@ class AddSongDialog(
                 Toast.makeText(mainActivity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifySongUri(uri))
                 Toast.makeText(mainActivity, "Invalid song URL", Toast.LENGTH_LONG).show()
-            else if (!mainActivity.isTokenAcquired())
+            else if (!mainActivity.webApi.isTokenAcquired())
                 Toast.makeText(mainActivity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
                 val id = UriUtils.extractIdFromUri(uri)
 
                 //import song
-                mainActivity.addSongWithName(id, playlistName)
+                mainActivity.webApi.addSongWithName(id, playlistName, lifecycle.coroutineScope)
                 mainActivity.notifyServicePlaylists()
 
                 dismiss()
