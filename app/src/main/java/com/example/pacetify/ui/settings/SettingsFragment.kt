@@ -6,9 +6,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.example.pacetify.MainActivity
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.example.pacetify.databinding.FragmentSettingsBinding
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 /**
  * In this fragment the user can change the basic settings for the app - motivating, rest and if
@@ -28,68 +34,69 @@ class SettingsFragment : Fragment() {
         _binding = null
     }
 
-    // the slider progress bar needs these two functions to convert between steps on the bar and
-    // the resting time. The bar goes from 0, hence the '+ 1'
-    private fun sliderProgressToTime(progress: Int): Int {
-        return (progress + 1) * 10
-    }
-
-    private fun timeToSliderProgress(time: Int): Int {
-        return (time / 10) - 1
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        /*val settingsViewModel =
-            ViewModelProvider(this).get(SettingsViewModel::class.java)*/
+        // we need this activity reference to be able to communicate with the service through it
+        val mainActivity = requireActivity() as MainActivity
+        val settingsViewModel by viewModels<SettingsViewModel>()
+
+        // observe our viewmodel data
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                launch {
+                    settingsViewModel.isCheckedMotivate.collect {
+                        binding.swMotivate.isChecked = it
+                    }
+                }
+                launch {
+                    settingsViewModel.isCheckedRest.collectLatest {
+                        binding.swRest.isChecked = it
+                        // enable the slider only if rest option is enabled
+                        binding.sbRest.isEnabled = it
+                    }
+                }
+                launch {
+                    settingsViewModel.restBarProgress.collectLatest {
+                        binding.sbRest.progress = it
+                    }
+                }
+                launch {
+                    settingsViewModel.restTime.collectLatest {
+                        binding.tvRest.text = "Maximal resting time: $it s"
+                    }
+                }
+            }
+        }
 
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        // we need this activity reference to be able to communicate with the service through it
-        val mainActivity = requireActivity() as MainActivity
-
-        /*val textView: TextView = binding.textNotifications
-        notificationsViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }*/
-
-        val settingsFile = SettingsPreferenceFile.getInstance(mainActivity)
-
-        binding.swMotivate.isChecked = settingsFile.motivate
-        binding.swRest.isChecked = settingsFile.rest
-        binding.sbRest.progress = timeToSliderProgress(settingsFile.restTime)
-        // enable the slider only if rest option is enabled
-        binding.sbRest.isEnabled = binding.swRest.isChecked
-        binding.tvRest.text = "Maximal resting time: ${settingsFile.restTime} s"
-
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
-                val curRestTime = sliderProgressToTime(progress)
-                binding.tvRest.text = "Maximal resting time: $curRestTime s"
-
-                settingsFile.restTime = curRestTime
-                mainActivity.notifyServiceSettings()
+                settingsViewModel.setRestTime(progress)
+                if (mainActivity.serviceBoundFlow.value)
+                    mainActivity.pacetifyService?.notifySettingsChanged()
             }
 
             override fun onStartTrackingTouch(p0: SeekBar?) {}
-
             override fun onStopTrackingTouch(p0: SeekBar?) {}
         })
 
         binding.swMotivate.setOnClickListener {
-            settingsFile.motivate = binding.swMotivate.isChecked
-            mainActivity.notifyServiceSettings()
+            settingsViewModel.setMotivate(binding.swMotivate.isChecked)
+            if (mainActivity.serviceBoundFlow.value)
+                mainActivity.pacetifyService?.notifySettingsChanged()
         }
 
         binding.swRest.setOnClickListener {
-            settingsFile.rest = binding.swRest.isChecked
-            binding.sbRest.isEnabled = binding.swRest.isChecked
-            mainActivity.notifyServiceSettings()
+            settingsViewModel.setRest(binding.swRest.isChecked)
+            if (mainActivity.serviceBoundFlow.value)
+                mainActivity.pacetifyService?.notifySettingsChanged()
         }
+
 
         return root
     }
