@@ -14,6 +14,7 @@ import com.example.pacetify.MainActivity
 import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.Song
 import com.example.pacetify.data.source.database.PacetifyDatabase
+import com.example.pacetify.util.NotConnectedException
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
 import com.spotify.sdk.android.auth.AuthorizationResponse
@@ -117,7 +118,7 @@ class WebApi(val activity: MainActivity) {
         mCall?.cancel()
     }
 
-    fun isTokenAcquired(): Boolean {
+    private fun isTokenAcquired(): Boolean {
         return mAccessToken != null
     }
 
@@ -128,11 +129,7 @@ class WebApi(val activity: MainActivity) {
     // importing songs from the just created playlist
     // this function only gets the total count of tracks in the playlist
     fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope) {
-        if (mAccessToken == null) {
-            Toast.makeText(activity, "Cannot import songs, please connect to the " +
-                    "internet and try again", Toast.LENGTH_LONG).show()
-            return
-        }
+        if (!isTokenAcquired()) throw NotConnectedException()
 
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/playlists/${playlist.id}/tracks")
@@ -299,11 +296,7 @@ class WebApi(val activity: MainActivity) {
     // import a single song
     // get the basic info about the song
     fun addSongWithName(songId: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
-        if (mAccessToken == null) {
-            Toast.makeText(activity, "Cannot add song, please connect to the " +
-                    "internet and try again", Toast.LENGTH_LONG).show()
-            return
-        }
+        if (!isTokenAcquired()) throw NotConnectedException()
 
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/tracks/$songId")

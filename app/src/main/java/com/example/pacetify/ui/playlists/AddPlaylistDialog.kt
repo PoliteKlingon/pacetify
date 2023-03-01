@@ -12,6 +12,7 @@ import com.example.pacetify.MainActivity
 import com.example.pacetify.R
 import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.source.database.PacetifyDao
+import com.example.pacetify.util.NotConnectedException
 import com.example.pacetify.util.UriUtils
 import kotlinx.coroutines.launch
 
@@ -51,26 +52,32 @@ class AddPlaylistDialog(
                 Toast.makeText(mainActivity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifyPlaylistUri(uri))
                 Toast.makeText(mainActivity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
-            else if (((mainActivity as MainActivity?)?.webApi?.isTokenAcquired()) != true) //is null or false
-                Toast.makeText(mainActivity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
                 val id = UriUtils.extractIdFromUri(uri)
                 val playlist = Playlist(id, name)
 
                 // import songs form the playlist
-                (mainActivity as MainActivity?)?.webApi?.addSongsFromPlaylist(playlist, lifecycle.coroutineScope)
+                try {
+                    mainActivity.webApi.addSongsFromPlaylist(playlist, lifecycle.coroutineScope)
 
-                playlists.add(playlist)
-                adapter.notifyItemInserted(playlists.size - 1)
-                etNewPlaylistName.setText("")
-                etNewPlaylistUri.setText("")
+                    playlists.add(playlist)
+                    adapter.notifyItemInserted(playlists.size - 1)
+                    etNewPlaylistName.setText("")
+                    etNewPlaylistUri.setText("")
 
-                lifecycle.coroutineScope.launch {
-                    dao.insertPlaylist(playlist)
-                    mainActivity.notifyServicePlaylists()
+                    lifecycle.coroutineScope.launch {
+                        dao.insertPlaylist(playlist)
+                        mainActivity.notifyServicePlaylists()
+                    }
+
+                    dismiss()
                 }
-
-                dismiss()
+                catch (e: NotConnectedException) {
+                    Toast.makeText(
+                        mainActivity,
+                        "Please connect to the internet to add a playlist",
+                        Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

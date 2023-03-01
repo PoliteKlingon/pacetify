@@ -21,6 +21,7 @@
         app:layout_constraintTop_toBottomOf="@+id/on_off" />
 
     <TextView
+        android:id="@+id/display_cadence"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"

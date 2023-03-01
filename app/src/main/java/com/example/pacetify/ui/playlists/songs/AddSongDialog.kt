@@ -11,6 +11,7 @@ import androidx.lifecycle.coroutineScope
 import com.example.pacetify.MainActivity
 import com.example.pacetify.R
 import com.example.pacetify.data.Song
+import com.example.pacetify.util.NotConnectedException
 import com.example.pacetify.util.UriUtils
 
 /**
@@ -41,16 +42,22 @@ class AddSongDialog(
                 Toast.makeText(mainActivity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifySongUri(uri))
                 Toast.makeText(mainActivity, "Invalid song URL", Toast.LENGTH_LONG).show()
-            else if (!mainActivity.webApi.isTokenAcquired())
-                Toast.makeText(mainActivity, "Please connect to the internet to add a playlist", Toast.LENGTH_LONG).show()
             else {
                 val id = UriUtils.extractIdFromUri(uri)
 
-                //import song
-                mainActivity.webApi.addSongWithName(id, playlistName, lifecycle.coroutineScope)
-                mainActivity.notifyServicePlaylists()
+                try {
+                    //import song
+                    mainActivity.webApi.addSongWithName(id, playlistName, lifecycle.coroutineScope)
+                    mainActivity.notifyServicePlaylists()
 
-                dismiss()
+                    dismiss()
+                }
+                catch (e: NotConnectedException) {
+                    Toast.makeText(
+                        mainActivity,
+                        "Please connect to the internet to add a song",
+                        Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
