@@ -23,6 +23,7 @@ import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.security.AccessController.getContext
 
 /**
  * A singleton class for interacting with the spotify web API.
@@ -77,7 +78,7 @@ class WebApi(val activity: MainActivity) {
     init {
         // register the just created callback
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
-        //TODO this should be unregistered onDestroy - is it?
+        // TODO this should be unregistered onDestroy - is it?
     }
 
     // create a launcher for the Spotify Auth activity

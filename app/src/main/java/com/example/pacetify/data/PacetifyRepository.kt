@@ -1,29 +1,30 @@
 package com.example.pacetify.data
 
+import android.content.Context
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.example.pacetify.MainActivity
 import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.example.pacetify.data.source.spotify.WebApi
 
-class PacetifyRepository(activity: MainActivity) {
+class PacetifyRepository(context: Context) {
     companion object {
         @Volatile
         private var INSTANCE: PacetifyRepository? = null
 
         // make this class a singleton
-        fun getInstance(activity: MainActivity): PacetifyRepository {
+        fun getInstance(context: Context): PacetifyRepository {
             synchronized(this) {
-                return INSTANCE ?: PacetifyRepository(activity).also {
+                return INSTANCE ?: PacetifyRepository(context).also {
                     INSTANCE = it
                 }
             }
         }
     }
 
-    private val dao = PacetifyDatabase.getInstance(activity).pacetifyDao
-    private val settingsPrefFile = SettingsPreferenceFile.getInstance(activity)
-    private val webApi = WebApi.getInstance(activity)
+    private val dao = PacetifyDatabase.getInstance(context).pacetifyDao
+    private val settingsPrefFile = SettingsPreferenceFile.getInstance(context)
+    //private val webApi = WebApi.getInstance(context)
 
     suspend fun insertPlaylist(playlist: Playlist) = dao.insertPlaylist(playlist)
 
@@ -59,7 +60,7 @@ class PacetifyRepository(activity: MainActivity) {
         get() = settingsPrefFile.restTime
         set(value) { settingsPrefFile.restTime = value }
 
-    fun onDestroy() = webApi.onDestroy()
+    /*fun onDestroy() = webApi.onDestroy()
     //TODO this should be resolved and removed
 
     fun isNetworkBeingUsed(): Boolean = webApi.isNetworkBeingUsed()
@@ -68,5 +69,5 @@ class PacetifyRepository(activity: MainActivity) {
         webApi.addSongsFromPlaylist(playlist, lifecycleScope)
 
     fun addSongWithName(songId: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) =
-        webApi.addSongWithName(songId, playlistName, lifecycleScope)
+        webApi.addSongWithName(songId, playlistName, lifecycleScope)*/
 }
