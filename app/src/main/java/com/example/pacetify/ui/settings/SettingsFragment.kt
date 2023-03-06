@@ -77,8 +77,7 @@ class SettingsFragment : Fragment() {
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
                 settingsViewModel.setRestTime(progress)
-                if (mainActivity.serviceBoundFlow.value)
-                    mainActivity.pacetifyService?.notifySettingsChanged()
+                mainActivity.notifyServiceSettings()
             }
 
             override fun onStartTrackingTouch(p0: SeekBar?) {}
@@ -87,14 +86,12 @@ class SettingsFragment : Fragment() {
 
         binding.swMotivate.setOnClickListener {
             settingsViewModel.setMotivate(binding.swMotivate.isChecked)
-            if (mainActivity.serviceBoundFlow.value)
-                mainActivity.pacetifyService?.notifySettingsChanged()
+            mainActivity.notifyServiceSettings()
         }
 
         binding.swRest.setOnClickListener {
             settingsViewModel.setRest(binding.swRest.isChecked)
-            if (mainActivity.serviceBoundFlow.value)
-                mainActivity.pacetifyService?.notifySettingsChanged()
+            mainActivity.notifyServiceSettings()
         }
 
 
