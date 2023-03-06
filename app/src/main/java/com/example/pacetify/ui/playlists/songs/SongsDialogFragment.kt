@@ -31,6 +31,8 @@ class SongsDialogFragment(
 
     private lateinit var mainActivity: MainActivity
 
+    private var serviceManuallyStarted = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -92,6 +94,8 @@ class SongsDialogFragment(
             // If the service is not running, we want to start it to be able to use it
             mainActivity.startService(tick = false) //we do not want the service to start the clock
             mainActivity.bindService()
+            // Remember that we started the service here
+            serviceManuallyStarted = true
         } else {
             mainActivity.pacetifyService?.stopTicking()
         }
@@ -101,9 +105,14 @@ class SongsDialogFragment(
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // If the service exists - it should - then start the clock again
+        // If the service exists - it should - then start the clock again if it was running before
+        // and stop it if it was not
         if (mainActivity.serviceBoundFlow.value)
-            mainActivity.pacetifyService?.startTicking()
+            if (serviceManuallyStarted) {
+                mainActivity.unbindService()
+                mainActivity.stopService()
+            }
+            else mainActivity.pacetifyService?.startTicking()
     }
 
     override fun onResume() {
