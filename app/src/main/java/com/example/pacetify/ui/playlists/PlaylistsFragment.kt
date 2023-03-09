@@ -103,6 +103,8 @@ class PlaylistsFragment : Fragment() {
                 delay(500) //TODO is there a better way?
                 adapter.notifyDataSetChanged()
             }
+            delay(500)
+            adapter.notifyDataSetChanged()
         }
     }
 }

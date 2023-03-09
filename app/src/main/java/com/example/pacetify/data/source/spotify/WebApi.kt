@@ -275,8 +275,8 @@ class WebApi(val activity: MainActivity) {
                         val songUri = item.getString("uri")
 
                         if (songUri == songs[i].uri) {
+                            val song = songs[i].copy(bpm = bpm)
                             lifecycleScope.launch {
-                                val song = songs[i].copy(bpm = bpm)
                                 dao.insertSong(song)
                                 Log.d("WebAPI", "inserted song: $song")
                             }
