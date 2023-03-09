@@ -6,7 +6,6 @@ import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.Network
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.LifecycleCoroutineScope
@@ -23,7 +22,6 @@ import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
-import java.security.AccessController.getContext
 
 /**
  * A singleton class for interacting with the spotify web API.
@@ -299,72 +297,6 @@ class WebApi(val activity: MainActivity) {
     fun addSongWithName(songId: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
         if (!isTokenAcquired()) throw NotConnectedException()
 
-        val request: Request = Request.Builder()
-            .url("https://api.spotify.com/v1/tracks/$songId")
-            .addHeader("Authorization", "Bearer $mAccessToken")
-            .build()
-
-        mCall = mOkHttpClient.newCall(request)
-        ongoingRequestsCount++
-
-        mCall?.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.d("WebAPI","Failed to fetch data: $e")
-                ongoingRequestsCount--
-            }
-
-            @Throws(IOException::class)
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    val jsonObject = JSONObject(response.body!!.string())
-                    val songName = jsonObject.getString("name")
-                    val artistName = jsonObject.getJSONArray("artists")
-                        .getJSONObject(0).getString("name")
-
-                    addSong("spotify:track:$songId", playlistName, songName, artistName, lifecycleScope)
-
-                } catch (e: JSONException) {
-                    Log.d("WebAPI","Failed to parse data: $e")
-                    //we do not add songs with unknown bpm
-                }
-                ongoingRequestsCount--
-            }
-        })
-    }
-
-    // get the bpm of the song and create it
-    private fun addSong(songUri: String, playlistName: String, songName: String, artistName: String, lifecycleScope: LifecycleCoroutineScope) {
-        val songId = songUri.takeLastWhile { ch -> ch != ':' }
-        val request: Request = Request.Builder()
-            .url("https://api.spotify.com/v1/audio-features/$songId")
-            .addHeader("Authorization", "Bearer $mAccessToken")
-            .build()
-
-        mCall = mOkHttpClient.newCall(request)
-        ongoingRequestsCount++
-
-        mCall?.enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.d("WebAPI","Failed to fetch data: $e")
-                ongoingRequestsCount--
-            }
-
-            @Throws(IOException::class)
-            override fun onResponse(call: Call, response: Response) {
-                try {
-                    val jsonObject = JSONObject(response.body!!.string())
-                    val bpm = jsonObject.getString("tempo").takeWhile { ch -> ch != '.' }.toInt()
-                    lifecycleScope.launch {
-                        val song = Song(songUri, songName, artistName, bpm, playlistName)
-                        dao.insertSong(song)
-                        Log.d("WebAPI", "inserted song: $song")
-                    }
-                } catch (e: JSONException) {
-                    Log.d("WebAPI","Failed to parse data: $e")
-                    //we do not add songs with unknown bpm
-                }
-                ongoingRequestsCount--
-            }
-        })
+        addMultipleSongsWithName(listOf("spotify:track:" + songId), playlistName, lifecycleScope)
     }
 }
