@@ -17,7 +17,7 @@ class UriUtils {
         }
 
         fun extractIdFromUri(uri: String): String {
-            var id = uri.takeLastWhile { ch -> ch != '/' }
+            var id = uri.takeLastWhile { ch -> ch != '/' && ch != ':' }
             if (id.contains('?')) {
                 id = id.takeWhile { ch -> ch != '?' }
             }

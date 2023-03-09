@@ -42,12 +42,9 @@ class AddSongDialog(
                 Toast.makeText(mainActivity, "URL can not be empty", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifySongUri(uri))
                 Toast.makeText(mainActivity, "Invalid song URL", Toast.LENGTH_LONG).show()
-            else {
-                val id = UriUtils.extractIdFromUri(uri)
-
-                try {
+            else {try {
                     //import song
-                    mainActivity.webApi.addSongWithName(id, playlistName, lifecycle.coroutineScope)
+                    mainActivity.webApi.addSongWithName(uri, playlistName, lifecycle.coroutineScope)
                     mainActivity.notifyServicePlaylists()
 
                     dismiss()

@@ -14,6 +14,7 @@ import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.Song
 import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.util.NotConnectedException
+import com.example.pacetify.util.UriUtils
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
 import com.spotify.sdk.android.auth.AuthorizationResponse
@@ -202,7 +203,7 @@ class WebApi(val activity: MainActivity) {
 
     // this function creates Songs with basic info from the uris - 50 at a time
     private fun addMultipleSongsWithName(songUris: List<String>, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
-        val songIds = songUris.map { songUri -> songUri.takeLastWhile { ch -> ch != ':' } }
+        val songIds = songUris.map { songUri -> UriUtils.extractIdFromUri(songUri) }
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/tracks?ids=${songIds.joinToString(separator = ",")}")
             .addHeader("Authorization", "Bearer $mAccessToken")
@@ -247,7 +248,7 @@ class WebApi(val activity: MainActivity) {
 
     // this function adds the bpm to multiple songs - 50 at a time
     private fun addMultipleSongs(songs: List<Song>, lifecycleScope: LifecycleCoroutineScope) {
-        val songIds = songs.map { song -> song.uri.takeLastWhile { ch -> ch != ':' } }
+        val songIds = songs.map { song -> UriUtils.extractIdFromUri(song.uri) }
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/audio-features?ids=${songIds.joinToString(separator = ",")}")
             .addHeader("Authorization", "Bearer $mAccessToken")
@@ -294,9 +295,9 @@ class WebApi(val activity: MainActivity) {
 
     // import a single song
     // get the basic info about the song
-    fun addSongWithName(songId: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
+    fun addSongWithName(songUri: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
         if (!isTokenAcquired()) throw NotConnectedException()
 
-        addMultipleSongsWithName(listOf("spotify:track:" + songId), playlistName, lifecycleScope)
+        addMultipleSongsWithName(listOf(songUri), playlistName, lifecycleScope)
     }
 }
