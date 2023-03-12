@@ -216,6 +216,7 @@ class PacetifyService : Service(), SensorEventListener {
                         "Something went wrong while trying to connect to Spotify, please try again",
                         Toast.LENGTH_LONG
                     ).show()
+                    stopSelf()
                 }
             })
     }
