@@ -58,6 +58,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     // handler for our clock
     lateinit var mainHandler: Handler
+    var ticking = false
 
     // flows for passing info to the UI
     private var cadenceFlow = MutableStateFlow("")
@@ -78,7 +79,7 @@ class PacetifyService : Service(), SensorEventListener {
     private var restTime = 20
 
     private val MOTIVATE_ADDITION = 3 // bpm to add if user wants to be motivated
-    private val RUNNING_THRESHOLD = 80 // lowest bpm that is considered to be running
+    private val RUNNING_THRESHOLD = 120 // lowest bpm that is considered to be running
     private val SONG_MINIMAL_SECONDS = 15 // lowest amount of seconds to be played from a song before skipping
     private val INITIAL_CADENCE = 150 // the bpm of the first played song  //TODO into settings?
     private val FAKE_CROSSFADE_DURATION_MS: Long = 1000 // duration of fake volume crossfade in ms
@@ -93,7 +94,7 @@ class PacetifyService : Service(), SensorEventListener {
     private var playerStateSubscription: Subscription<PlayerState>? = null
     private var timeToSongEnd: Long = 15
     private var timePlayedFromSong = 0
-    private lateinit var currentSong: Song
+    private var currentSong: Song? = null
     private var notificationManager: NotificationManager? = null
     private var notification: Notification.Builder? = null
 
@@ -113,11 +114,17 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     fun startTicking() {
-        mainHandler.post(clock)
+        if (!ticking) {
+            mainHandler.post(clock)
+            ticking = true
+        }
     }
 
     fun stopTicking() {
-        mainHandler.removeCallbacks(clock)
+        if (ticking) {
+            mainHandler.removeCallbacks(clock)
+            ticking = false
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -140,14 +147,15 @@ class PacetifyService : Service(), SensorEventListener {
 
         if (stepSensor == null) {
             Toast.makeText(applicationContext, "No sensor detected on this device", Toast.LENGTH_LONG).show()
-            this.stopSelf()
+            shouldStartPlaying = false
+            homeTextFlow.value = "No sensor detected on this device"
         } else {
             stepSensorRunning = true
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
         }
 
         dao = PacetifyDatabase.getInstance(this).pacetifyDao
-        loadSongs()
+        loadSongs(restartTicking = false)
 
         settingsFile = SettingsPreferenceFile.getInstance(this)
         loadSettings()
@@ -216,7 +224,8 @@ class PacetifyService : Service(), SensorEventListener {
                         "Something went wrong while trying to connect to Spotify, please try again",
                         Toast.LENGTH_LONG
                     ).show()
-                    stopSelf()
+                    shouldStartPlaying = false
+                    homeTextFlow.value = "Something went wrong while trying to connect to Spotify"
                 }
             })
     }
@@ -246,7 +255,12 @@ class PacetifyService : Service(), SensorEventListener {
             CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
                 // play the first song
                 songsLoadingMutex.lock()
-                val song = songs[chooseSongIdx(INITIAL_CADENCE)]
+                val songIdx = chooseSongIdx(INITIAL_CADENCE)
+                if (songIdx == -1) {
+                    songsLoadingMutex.unlock()
+                    return@launch
+                }
+                val song = songs[songIdx]
                 songsLoadingMutex.unlock()
                 playSong(song)
                 currentSong = song
@@ -306,7 +320,7 @@ class PacetifyService : Service(), SensorEventListener {
         updateNotification()
 
         // We are running, so we remember the current bpm
-        if (currentSong.bpm > RUNNING_THRESHOLD) lastRunningBpm = currentSong.bpm
+        if (currentSong != null && currentSong!!.bpm > RUNNING_THRESHOLD) lastRunningBpm = currentSong!!.bpm
 
         timePlayedFromSong++
         timeToSongEnd--
@@ -322,7 +336,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         else if (isRunning() && currentCadence > RUNNING_THRESHOLD
             && timePlayedFromSong > SONG_MINIMAL_SECONDS
-            && (abs(cadence - currentSong.bpm) > 5)) //TODO maybe some smarter way? - more consistent speed increase leads to song change
+            && currentSong != null && (abs(cadence - currentSong!!.bpm) > 5)) //TODO maybe some smarter way? - more consistent speed increase leads to song change
             skipSong()
 
         else if (timeToSongEnd <= 10) {
@@ -346,7 +360,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun updateHomeTextFlow() {
         homeTextFlow.value =
-            "currentBpm: ${currentSong.bpm}\n" +
+            "currentBpm: ${currentSong?.bpm}\n" +
                     "wasResting: $wasResting\n" +
                     "lastRunningBpm: $lastRunningBpm\n" +
                     "timePlayedFromSong: $timePlayedFromSong\n" +
@@ -409,9 +423,12 @@ class PacetifyService : Service(), SensorEventListener {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             songsLoadingMutex.lock()
             var songIdx = chooseSongIdx(nextBpm)
-
+            if (songIdx == -1) {
+                songsLoadingMutex.unlock()
+                return@launch
+            }
             // if there is more than one song, do not play the same song twice
-            if (currentSong.uri == songs[songIdx].uri) {
+            if (currentSong?.uri == songs[songIdx].uri) {
                 if (songIdx < songs.size - 1) songIdx++
                 else if (songIdx > 0) songIdx--
             }
@@ -457,7 +474,7 @@ class PacetifyService : Service(), SensorEventListener {
                 i--
             }
 
-            playSong(currentSong)
+            if (currentSong != null) playSong(currentSong!!)
             mSpotifyAppRemote?.playerApi?.seekTo(1000 * 10)
 
             while (i <= 10) {
@@ -493,12 +510,15 @@ class PacetifyService : Service(), SensorEventListener {
         }
     }
 
-    private fun loadSongs() {
+    private fun loadSongs(restartTicking: Boolean = true) {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             homeTextFlow.value = "Loading songs..."
             songsLoadingMutex.lock()
             if (dao != null) songs = dao!!.getSongs()
             songsLoadingMutex.unlock()
+            if (songs.isEmpty()) homeTextFlow.value = "There are no songs to be played."
+            else if (restartTicking) startTicking()
+            Log.d("ASDF", songs.size.toString())
         }
     }
 
@@ -512,8 +532,10 @@ class PacetifyService : Service(), SensorEventListener {
     // choosing the song based on the desired bpm
     private fun chooseSongIdx(bpm: Int): Int {
         if (songs.isEmpty()) {
-            Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show()
-            stopSelf()
+            //Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show() //TODO how
+            homeTextFlow.value = "You must add some playlist first"
+            currentSong = null
+            stopTicking()
             return -1
         }
         val songIndex = binarySearchSongIndex(bpm, 0, songs.size - 1)

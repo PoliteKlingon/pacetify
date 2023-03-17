@@ -1,11 +1,8 @@
 package com.example.pacetify.data
 
 import android.content.Context
-import androidx.lifecycle.LifecycleCoroutineScope
-import com.example.pacetify.MainActivity
 import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
-import com.example.pacetify.data.source.spotify.WebApi
 
 class PacetifyRepository(context: Context) {
     companion object {
@@ -42,7 +39,7 @@ class PacetifyRepository(context: Context) {
 
     suspend fun getPlaylists(): List<Playlist> = dao.getPlaylists()
 
-    suspend fun numOfPlaylists(name: String): Int = dao.numOfPlaylists(name)
+    suspend fun numOfPlaylists(name: String): Int = dao.existenceOfPlaylists(name)
 
     suspend fun deletePlaylist(playlistName: String) = dao.deletePlaylist(playlistName)
 

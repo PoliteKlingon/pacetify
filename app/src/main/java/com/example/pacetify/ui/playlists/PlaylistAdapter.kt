@@ -46,6 +46,16 @@ class PlaylistAdapter(
                 tvPlaylistSongs.text = if (songNum == 0) "Empty or invalid playlist" else "$songNum songs imported (tap to manage)"
             }
 
+            cbEnable.isChecked = currentPlaylist.enabled
+
+            cbEnable.setOnCheckedChangeListener { _, isChecked ->
+                lifecycleScope.launch {
+                    val updatedPlaylist = currentPlaylist.copy(enabled = isChecked)
+                    dao.updatePlaylist(updatedPlaylist)
+                    mainActivity.notifyServicePlaylists()
+                }
+            }
+
             // display dialog to ensure that the user really wanted to delete the playlist
             btnDelete.setOnClickListener {
                 AlertDialog.Builder(mainActivity)
