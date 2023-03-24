@@ -166,7 +166,7 @@ class HomeFragment : Fragment() {
 
         binding.skipSong.setOnClickListener {
             if (mainActivity.serviceBoundFlow.value) {
-                mainActivity.pacetifyService?.skipSong()
+                mainActivity.pacetifyService?.orderSkipSong()
             } else {
                 Toast.makeText(requireActivity(), "Service is not active", Toast.LENGTH_SHORT).show()
             }
@@ -187,7 +187,6 @@ class HomeFragment : Fragment() {
             if (binding.displayCadence.text != getString(R.string.activity_background_disabled_warning))
                 binding.displayCadence.text = getString(R.string.service_off_description)
         if (homeTextFlow == null) binding.textHome.text = ""
-
         if (songNameFlow == null) binding.displaySong.text = ""
 
         requestActivityPermission()

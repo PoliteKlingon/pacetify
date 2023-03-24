@@ -325,8 +325,21 @@ class PacetifyService : Service(), SensorEventListener {
         }
     }
 
+    private var skipNextTime = false
+
+    fun orderSkipSong() {
+        skipNextTime = true
+    }
+
     // A single tick of the clock - this function is executed every second
     fun tick() {
+        Log.d("Service", "tick")
+
+        if (skipNextTime) {
+            skipNextTime = false
+            skipSong()
+            return
+        }
         calculateCadence()
         cadenceFlow.value = "Cadence: $cadence steps per minute"
 
@@ -481,20 +494,23 @@ class PacetifyService : Service(), SensorEventListener {
                 audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
                     ((i / 10f) * originalVolume).toInt(),
-                    0
+                    AudioManager.FLAG_SHOW_UI
                 )
                 delay(crossfadeStepMs)
                 i--
             }
 
             if (currentSong != null) playSong(currentSong!!)
-            mSpotifyAppRemote?.playerApi?.seekTo(1000 * 10)
+            // wait for the skip to execute
+            delay(250)
+            // start the song on the fifteenth second to avoid slow song starts
+            mSpotifyAppRemote?.playerApi?.seekTo(1000 * 15)
 
             while (i <= 10) {
                 audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
                     ((i / 10f) * originalVolume).toInt(),
-                    0
+                    AudioManager.FLAG_SHOW_UI
                 )
                 delay(crossfadeStepMs)
                 i++
