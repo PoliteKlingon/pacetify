@@ -9,6 +9,7 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.media.AudioManager
 import android.os.*
+import android.os.PowerManager.WakeLock
 import android.util.Log
 import android.widget.Toast
 import com.example.pacetify.MainActivity
@@ -103,6 +104,9 @@ class PacetifyService : Service(), SensorEventListener {
     // this mutex is for handling the concurrency of reloading songs and picking a song
     private var songsLoadingMutex = Mutex()
 
+    // this lock keeps the CPU awake even when the screen is off
+    private lateinit var wakeLock: WakeLock;
+
     inner class PacetifyBinder : Binder() {
         fun getService() = this@PacetifyService
     }
@@ -130,6 +134,13 @@ class PacetifyService : Service(), SensorEventListener {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         makeServiceForeground()
+
+        wakeLock =
+            (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
+                    acquire()
+                }
+            }
 
         shouldStartPlaying = intent?.getBooleanExtra("tick", true) ?: true
 
@@ -273,6 +284,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     override fun onDestroy() {
         super.onDestroy()
+        wakeLock.release()
         pauseSong()
         playerStateSubscription?.cancel()
         stopTicking()
@@ -360,11 +372,11 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun updateHomeTextFlow() {
         homeTextFlow.value =
-            "currentBpm: ${currentSong?.bpm}\n" +
+            /*"currentBpm: ${currentSong?.bpm}\n" +
                     "wasResting: $wasResting\n" +
                     "lastRunningBpm: $lastRunningBpm\n" +
                     "timePlayedFromSong: $timePlayedFromSong\n" +
-                    "timeToSongEnd: $timeToSongEnd\n\n" +
+                    "timeToSongEnd: $timeToSongEnd\n\n" +*/
                     if (currentlyResting) "Resting: $currentRestingTime s left" else ""
     }
 
@@ -518,7 +530,6 @@ class PacetifyService : Service(), SensorEventListener {
             songsLoadingMutex.unlock()
             if (songs.isEmpty()) homeTextFlow.value = "There are no songs to be played."
             else if (restartTicking) startTicking()
-            Log.d("ASDF", songs.size.toString())
         }
     }
 
