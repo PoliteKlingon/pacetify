@@ -105,7 +105,7 @@ class PacetifyService : Service(), SensorEventListener {
     private var songsLoadingMutex = Mutex()
 
     // this lock keeps the CPU awake even when the screen is off
-    private lateinit var wakeLock: WakeLock;
+    private lateinit var wakeLock: WakeLock
 
     inner class PacetifyBinder : Binder() {
         fun getService() = this@PacetifyService
@@ -137,7 +137,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         wakeLock =
             (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
-                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyApp::MyWakelockTag").apply {
+                newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PacetifyService::Wakelock").apply {
                     acquire()
                 }
             }
@@ -150,7 +150,7 @@ class PacetifyService : Service(), SensorEventListener {
         stepsPrevious = Array(stepsPreviousSize) { 0f } //steps recorded for the last ten seconds
         cadencePrevious = Array(cadencePreviousSize) { 0f } //cadence recorded for the last ten seconds
 
-        mainHandler = Handler(Looper.getMainLooper()) // create a handler for our clock
+        mainHandler = Handler(this.mainLooper) // create a handler for our clock
 
         val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
 
@@ -202,6 +202,7 @@ class PacetifyService : Service(), SensorEventListener {
                     .setContentTitle("Pacetify service is running")
                     .setContentText("Let's run!")
                     .setContentIntent(pendingIntent)
+                    .setOngoing(true)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
                     .also {
                         startForeground(1, it.build())

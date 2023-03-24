@@ -1,15 +1,18 @@
 package com.example.pacetify.ui.home
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -104,7 +107,8 @@ class HomeFragment : Fragment() {
     private fun onServiceDisconnected() {
         binding.onOff.text = getString(R.string.service_off)
 
-        binding.displayCadence.text = getString(R.string.service_off_description)
+        if (binding.displayCadence.text != getString(R.string.activity_background_disabled_warning))
+            binding.displayCadence.text = getString(R.string.service_off_description)
         binding.textHome.text = ""
         binding.displaySong.text = ""
         binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
@@ -179,19 +183,27 @@ class HomeFragment : Fragment() {
             }
         }
 
-        if (cadenceFlow == null) binding.displayCadence.text = getString(R.string.service_off_description)
-
+        if (cadenceFlow == null)
+            if (binding.displayCadence.text != getString(R.string.activity_background_disabled_warning))
+                binding.displayCadence.text = getString(R.string.service_off_description)
         if (homeTextFlow == null) binding.textHome.text = ""
 
         if (songNameFlow == null) binding.displaySong.text = ""
 
+        requestActivityPermission()
+        requestBackgroundPermission()
+        return root
+    }
+
+    private fun requestActivityPermission() {
         // Here we need to obtain the permission to read the user's activity
         val requestPermission = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
             if (isGranted) {
                 binding.onOff.isEnabled = true
-                binding.displayCadence.text = getString(R.string.service_off_description)
+                if (binding.displayCadence.text != getString(R.string.activity_background_disabled_warning))
+                    binding.displayCadence.text = getString(R.string.service_off_description)
             } else {
                 binding.displayCadence.text = getString(R.string.activity_recognition_disabled_warning)
                 binding.onOff.isEnabled = false
@@ -204,8 +216,23 @@ class HomeFragment : Fragment() {
             ) != PackageManager.PERMISSION_GRANTED
         ) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
             requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+    }
 
-        return root
+    private fun requestBackgroundPermission() {
+        val packageName: String = mainActivity.packageName
+        val pm = mainActivity.getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+            AlertDialog.Builder(mainActivity)
+                .setTitle("Please allow background activity for Pacetify")
+                .setMessage("This app will not work without properly without background activity " +
+                        "enabled. \nPlease enable it (Apps -> Pacetify -> Battery usage -> Allow " +
+                        "background activity) and restart Pacetify.")
+                .setPositiveButton("OK")  { dialog, _ -> dialog.dismiss() }
+                .show()
+
+            binding.displayCadence.text = getString(R.string.activity_background_disabled_warning)
+            binding.onOff.isEnabled = false
+        }
     }
 
     override fun onResume() {

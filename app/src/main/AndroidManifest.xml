@@ -33,7 +33,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".data.PacetifyService" android:stopWithTask="false" />
+        <service
+            android:name=".data.PacetifyService"
+            android:stopWithTask="false"
+            android:foregroundServiceType="mediaPlayback"
+            />
     </application>
 
 </manifest>
