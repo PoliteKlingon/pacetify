@@ -1,4 +1,4 @@
-package com.example.pacetify.data
+package com.example.pacetify
 
 import android.app.*
 import android.content.Context
@@ -13,8 +13,7 @@ import android.os.*
 import android.os.PowerManager.WakeLock
 import android.util.Log
 import android.widget.Toast
-import com.example.pacetify.MainActivity
-import com.example.pacetify.R
+import com.example.pacetify.data.Song
 import com.example.pacetify.data.source.database.PacetifyDao
 import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile

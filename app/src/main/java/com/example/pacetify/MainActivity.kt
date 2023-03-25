@@ -12,7 +12,6 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
-import com.example.pacetify.data.PacetifyService
 import com.example.pacetify.data.source.spotify.WebApi
 import com.example.pacetify.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.MutableStateFlow

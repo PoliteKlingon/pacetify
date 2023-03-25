@@ -34,7 +34,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".data.PacetifyService"
+            android:name=".PacetifyService"
             android:stopWithTask="false"
             android:foregroundServiceType="mediaPlayback"
             />
