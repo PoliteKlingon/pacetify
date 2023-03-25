@@ -54,7 +54,7 @@ class AddPlaylistDialog(
                 Toast.makeText(mainActivity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
             else {
                 val id = UriUtils.extractIdFromUri(uri)
-                val playlist = Playlist(id, name)
+                val playlist = Playlist(id, name, true)
 
                 // import songs form the playlist
                 try {
