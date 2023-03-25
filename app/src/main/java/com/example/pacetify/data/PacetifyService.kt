@@ -3,6 +3,7 @@ package com.example.pacetify.data
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Icon
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -63,8 +64,9 @@ class PacetifyService : Service(), SensorEventListener {
 
     // flows for passing info to the UI
     private var cadenceFlow = MutableStateFlow("")
-    private var homeTextFlow = MutableStateFlow("")
+    private var infoFlow = MutableStateFlow("")
     private var songNameFlow = MutableStateFlow("")
+    private var songDescriptionFlow = MutableStateFlow("")
 
     // Spotify app remote
     private val CLIENT_ID = "29755c71ec3a4765aec6d780e0b71214"
@@ -132,6 +134,10 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == "SKIP_SONG") {
+            orderSkipSong()
+            return START_REDELIVER_INTENT
+        }
 
         makeServiceForeground()
 
@@ -145,7 +151,7 @@ class PacetifyService : Service(), SensorEventListener {
         shouldStartPlaying = intent?.getBooleanExtra("tick", true) ?: true
 
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        audioManager = applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         stepsPrevious = Array(stepsPreviousSize) { 0f } //steps recorded for the last ten seconds
         cadencePrevious = Array(cadencePreviousSize) { 0f } //cadence recorded for the last ten seconds
@@ -159,7 +165,7 @@ class PacetifyService : Service(), SensorEventListener {
         if (stepSensor == null) {
             Toast.makeText(applicationContext, "No sensor detected on this device", Toast.LENGTH_LONG).show()
             shouldStartPlaying = false
-            homeTextFlow.value = "No sensor detected on this device"
+            infoFlow.value = "No sensor detected on this device"
         } else {
             stepSensorRunning = true
             sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
@@ -182,7 +188,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Create the NotificationChannel
-            val mChannel = NotificationChannel("PacetifyChannel", "PacetifyChannel", NotificationManager.IMPORTANCE_LOW)
+            val mChannel = NotificationChannel("Pacetify", "Pacetify", NotificationManager.IMPORTANCE_HIGH)
             mChannel.description = "This is an Pacetify notification channel"
             // Register the channel with the system
             notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
@@ -197,13 +203,32 @@ class PacetifyService : Service(), SensorEventListener {
                     )
                 }
 
+            // this intent is for the notification button to be able to skip a song
+            val pendingSkipIntent: PendingIntent =
+                Intent(this, PacetifyService::class.java).let { skipIntent ->
+                    skipIntent.action = "SKIP_SONG"
+                    PendingIntent.getService(
+                        this, 0, skipIntent,
+                        PendingIntent.FLAG_IMMUTABLE
+                    )
+                }
+
+            // Create the skip song action
+            val skipAction = Notification.Action.Builder(
+                Icon.createWithResource(this, R.drawable.ic_launcher_foreground), //TODO another Icon
+                "Skip Song",
+                pendingSkipIntent
+            ).build()
+
             notification =
-                Notification.Builder(this,"PacetifyChannel")
+                Notification.Builder(this,"Pacetify")
                     .setContentTitle("Pacetify service is running")
                     .setContentText("Let's run!")
                     .setContentIntent(pendingIntent)
                     .setOngoing(true)
+                    .setOnlyAlertOnce(true)
                     .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .addAction(skipAction)
                     .also {
                         startForeground(1, it.build())
                     }
@@ -237,7 +262,7 @@ class PacetifyService : Service(), SensorEventListener {
                         Toast.LENGTH_LONG
                     ).show()
                     shouldStartPlaying = false
-                    homeTextFlow.value = "Something went wrong while trying to connect to Spotify"
+                    infoFlow.value = "Something went wrong while trying to connect to Spotify"
                 }
             })
     }
@@ -247,7 +272,8 @@ class PacetifyService : Service(), SensorEventListener {
         playerStateSubscription = mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
             ?.setEventCallback { event ->
                 val track = event.track
-                songNameFlow.value = "${track.name}\n ${track.artist.name}\n ${track.album.name}"
+                songDescriptionFlow.value = "${track.artist.name}\n ${track.album.name}"
+                songNameFlow.value = track.name
                 timeToSongEnd = (track.duration - event.playbackPosition) / 1000
             }
 
@@ -318,7 +344,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun updateNotification() {
         if (notification != null) {
-            notification!!.setContentText("Your pace is $cadence")
+            notification!!.setContentText("Your cadence is $cadence")
                 .also {
                     notificationManager?.notify(1, it.build())
                 }
@@ -341,7 +367,7 @@ class PacetifyService : Service(), SensorEventListener {
             return
         }
         calculateCadence()
-        cadenceFlow.value = "Cadence: $cadence steps per minute"
+        cadenceFlow.value = "Cadence: $cadence"
 
         updateNotification()
 
@@ -381,11 +407,11 @@ class PacetifyService : Service(), SensorEventListener {
             currentRestingTime = restTime
         }
 
-        updateHomeTextFlow()
+        updateInfoFlow()
     }
 
-    private fun updateHomeTextFlow() {
-        homeTextFlow.value =
+    private fun updateInfoFlow() {
+        infoFlow.value =
             /*"currentBpm: ${currentSong?.bpm}\n" +
                     "wasResting: $wasResting\n" +
                     "lastRunningBpm: $lastRunningBpm\n" +
@@ -425,7 +451,7 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     fun getFlows(): Array<MutableStateFlow<String>> {
-        return arrayOf(cadenceFlow, homeTextFlow, songNameFlow)
+        return arrayOf(cadenceFlow, infoFlow, songNameFlow, songDescriptionFlow)
     }
 
     fun skipSong() {
@@ -541,11 +567,11 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun loadSongs(restartTicking: Boolean = true) {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-            homeTextFlow.value = "Loading songs..."
+            infoFlow.value = "Loading songs..."
             songsLoadingMutex.lock()
             if (dao != null) songs = dao!!.getSongs()
             songsLoadingMutex.unlock()
-            if (songs.isEmpty()) homeTextFlow.value = "There are no songs to be played."
+            if (songs.isEmpty()) infoFlow.value = "There are no songs to be played."
             else if (restartTicking) startTicking()
         }
     }
@@ -561,7 +587,7 @@ class PacetifyService : Service(), SensorEventListener {
     private fun chooseSongIdx(bpm: Int): Int {
         if (songs.isEmpty()) {
             //Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show() //TODO how
-            homeTextFlow.value = "You must add some playlist first"
+            infoFlow.value = "You must add some playlist first"
             currentSong = null
             stopTicking()
             return -1

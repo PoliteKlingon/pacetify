@@ -7,6 +7,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,18 +37,21 @@ class HomeFragment : Fragment() {
     // These stateFlows will flow from the service and carry all the information.
     // Each has its observer to be able to cancel the flow collecting
     private var cadenceFlow: StateFlow<String>? = null
-    private var homeTextFlow: StateFlow<String>? = null
+    private var infoFlow: StateFlow<String>? = null
     private var songNameFlow: StateFlow<String>? = null
+    private var songDescriptionFlow: StateFlow<String>? = null
 
     private var cadenceFlowObserver: Job? = null
     private var homeTextFlowObserver: Job? = null
     private var songNameFlowObserver: Job? = null
+    private var songDescriptionFlowObserver: Job? = null
 
     private lateinit var mainActivity: MainActivity
     private var serviceBoundFlowObserver: Job? = null
 
     private fun onServiceConnected() {
-        binding.onOff.text = getString(R.string.service_on)
+        binding.btnOnOff.text = getString(R.string.service_on)
+        binding.tvCadence.setTextSize(TypedValue.COMPLEX_UNIT_SP, 27.0F)
 
         if (mainActivity.pacetifyService == null) {
             Log.w("Home Fragment", "The just connected service is null, aborting...")
@@ -58,26 +62,28 @@ class HomeFragment : Fragment() {
         val flows = mainActivity.pacetifyService?.getFlows()
         if (flows != null) {
             cadenceFlow = flows[0]
-            homeTextFlow = flows[1]
+            infoFlow = flows[1]
             songNameFlow = flows[2]
+            songDescriptionFlow = flows[3]
         }
 
-        if (cadenceFlow == null || homeTextFlow == null || songNameFlow == null) {
+        if (cadenceFlow == null || infoFlow == null || songNameFlow == null || songDescriptionFlow == null) {
             Log.w("HomeFragment", "Some of the service's flows are null, aborting...")
             return
         }
 
         Log.d("HomeFragment", "service connected")
 
-        binding.textHome.text = homeTextFlow?.value
-        binding.displayCadence.text = cadenceFlow?.value
-        binding.displaySong.text = songNameFlow?.value
+        binding.tvInfo.text = infoFlow?.value
+        binding.tvCadence.text = cadenceFlow?.value
+        binding.tvSongName.text = songNameFlow?.value
+        binding.tvSongDescription.text = songDescriptionFlow?.value
 
         // observe the flows
         if (cadenceFlowObserver == null) {
             cadenceFlowObserver = lifecycleScope.launchWhenStarted {
                 cadenceFlow?.collectLatest {
-                    binding.displayCadence.text = it
+                    binding.tvCadence.text = it
                     Log.d("HomeFragment", "cadence updated")
                 }
             }
@@ -85,8 +91,8 @@ class HomeFragment : Fragment() {
 
         if (homeTextFlowObserver == null) {
             homeTextFlowObserver = lifecycleScope.launchWhenStarted {
-                homeTextFlow?.collectLatest {
-                    binding.textHome.text = it
+                infoFlow?.collectLatest {
+                    binding.tvInfo.text = it
                     Log.d("HomeFragment", "homeText updated")
                 }
             }
@@ -95,27 +101,39 @@ class HomeFragment : Fragment() {
         if (songNameFlowObserver == null) {
             songNameFlowObserver = lifecycleScope.launchWhenStarted {
                 songNameFlow?.collectLatest {
-                    binding.displaySong.text = it
+                    binding.tvSongName.text = it
                     Log.d("HomeFragment", "songName updated")
                 }
             }
         }
 
-        binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
+        if (songDescriptionFlowObserver == null) {
+            songDescriptionFlowObserver = lifecycleScope.launchWhenStarted {
+                songDescriptionFlow?.collectLatest {
+                    binding.tvSongDescription.text = it
+                    Log.d("HomeFragment", "songDescription updated")
+                }
+            }
+        }
+
+        binding.btnSkipSong.isEnabled = mainActivity.serviceBoundFlow.value
     }
 
     private fun onServiceDisconnected() {
-        binding.onOff.text = getString(R.string.service_off)
+        binding.btnOnOff.text = getString(R.string.service_off)
+        binding.tvCadence.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20.0F)
 
-        if (binding.displayCadence.text != getString(R.string.activity_background_disabled_warning))
-            binding.displayCadence.text = getString(R.string.service_off_description)
-        binding.textHome.text = ""
-        binding.displaySong.text = ""
-        binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
+        if (binding.tvCadence.text != getString(R.string.activity_background_disabled_warning))
+            binding.tvCadence.text = getString(R.string.service_off_description)
+        binding.tvInfo.text = ""
+        binding.tvSongName.text = ""
+        binding.tvSongDescription.text = ""
+        binding.btnSkipSong.isEnabled = mainActivity.serviceBoundFlow.value
 
         cadenceFlow = null
-        homeTextFlow = null
+        infoFlow = null
         songNameFlow = null
+        songDescriptionFlow = null
 
         // cancel the flow observing
         cadenceFlowObserver?.cancel(CancellationException())
@@ -124,6 +142,8 @@ class HomeFragment : Fragment() {
         homeTextFlowObserver = null
         songNameFlowObserver?.cancel(CancellationException())
         songNameFlowObserver = null
+        songDescriptionFlowObserver?.cancel(CancellationException())
+        songDescriptionFlowObserver = null
     }
 
     override fun onDestroyView() {
@@ -156,15 +176,15 @@ class HomeFragment : Fragment() {
             }
         }
 
-        /*val textView: TextView = binding.textHome
+        /*val textView: TextView = binding.tvInfo
         homeViewModel.text.observe(viewLifecycleOwner) {
             textView.text = /*it*/ getString(R.string.home_text_default)
         }*/
-        binding.textHome.text = getString(R.string.home_text_default)
+        binding.tvInfo.text = getString(R.string.home_text_default)
 
-        binding.skipSong.isEnabled = mainActivity.serviceBoundFlow.value
+        binding.btnSkipSong.isEnabled = mainActivity.serviceBoundFlow.value
 
-        binding.skipSong.setOnClickListener {
+        binding.btnSkipSong.setOnClickListener {
             if (mainActivity.serviceBoundFlow.value) {
                 mainActivity.pacetifyService?.orderSkipSong()
             } else {
@@ -173,7 +193,7 @@ class HomeFragment : Fragment() {
         }
 
         // service manipulation
-        binding.onOff.setOnClickListener {
+        binding.btnOnOff.setOnClickListener {
             if (mainActivity.serviceBoundFlow.value) {
                 mainActivity.unbindService()
                 mainActivity.stopService()
@@ -184,10 +204,11 @@ class HomeFragment : Fragment() {
         }
 
         if (cadenceFlow == null)
-            if (binding.displayCadence.text != getString(R.string.activity_background_disabled_warning))
-                binding.displayCadence.text = getString(R.string.service_off_description)
-        if (homeTextFlow == null) binding.textHome.text = ""
-        if (songNameFlow == null) binding.displaySong.text = ""
+            if (binding.tvCadence.text != getString(R.string.activity_background_disabled_warning))
+                binding.tvCadence.text = getString(R.string.service_off_description)
+        if (infoFlow == null) binding.tvInfo.text = ""
+        if (songNameFlow == null) binding.tvSongName.text = ""
+        if (songDescriptionFlow == null) binding.tvSongDescription.text = ""
 
         requestActivityPermission()
         requestBackgroundPermission()
@@ -200,12 +221,12 @@ class HomeFragment : Fragment() {
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
             if (isGranted) {
-                binding.onOff.isEnabled = true
-                if (binding.displayCadence.text != getString(R.string.activity_background_disabled_warning))
-                    binding.displayCadence.text = getString(R.string.service_off_description)
+                binding.btnOnOff.isEnabled = true
+                if (binding.tvCadence.text != getString(R.string.activity_background_disabled_warning))
+                    binding.tvCadence.text = getString(R.string.service_off_description)
             } else {
-                binding.displayCadence.text = getString(R.string.activity_recognition_disabled_warning)
-                binding.onOff.isEnabled = false
+                binding.tvCadence.text = getString(R.string.activity_recognition_disabled_warning)
+                binding.btnOnOff.isEnabled = false
             }
         }
 
@@ -229,8 +250,8 @@ class HomeFragment : Fragment() {
                 .setPositiveButton("OK")  { dialog, _ -> dialog.dismiss() }
                 .show()
 
-            binding.displayCadence.text = getString(R.string.activity_background_disabled_warning)
-            binding.onOff.isEnabled = false
+            binding.tvCadence.text = getString(R.string.activity_background_disabled_warning)
+            binding.btnOnOff.isEnabled = false
         }
     }
 
