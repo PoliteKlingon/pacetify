@@ -569,7 +569,7 @@ class PacetifyService : Service(), SensorEventListener {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             infoFlow.value = "Loading songs..."
             songsLoadingMutex.lock()
-            if (dao != null) songs = dao!!.getSongs()
+            if (dao != null) songs = dao!!.getEnabledSongsDistinct()
             songsLoadingMutex.unlock()
             if (songs.isEmpty()) infoFlow.value = "There are no songs to be played."
             else if (restartTicking) startTicking()

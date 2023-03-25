@@ -21,7 +21,7 @@ interface PacetifyDao {
     suspend fun _insertSong(song: Song)
 
     @Query("SELECT * FROM Song INNER JOIN Playlist ON Playlist.name = Song.fromPlaylist WHERE Playlist.enabled = true GROUP BY uri ORDER BY bpm ASC")
-    suspend fun getSongs(): Array<Song>
+    suspend fun getEnabledSongsDistinct(): Array<Song>
 
     @Query("SELECT * FROM Song ORDER BY name ASC")
     suspend fun getSongsWithDuplicates(): Array<Song>

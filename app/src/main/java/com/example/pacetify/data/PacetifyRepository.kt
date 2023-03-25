@@ -27,7 +27,7 @@ class PacetifyRepository(context: Context) {
 
     suspend fun insertSong(song: Song) = dao.insertSong(song)
 
-    suspend fun getSongs(): Array<Song> =  dao.getSongs()
+    suspend fun getSongs(): Array<Song> =  dao.getEnabledSongsDistinct()
 
     suspend fun getSongsWithDuplicates(): Array<Song> = dao.getSongsWithDuplicates()
 
