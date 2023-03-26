@@ -3,6 +3,7 @@ package com.example.pacetify.data
 import android.content.Context
 import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
+import com.example.pacetify.data.source.spotify.WebApi
 
 class PacetifyRepository(context: Context) {
     companion object {

@@ -42,7 +42,7 @@ class HomeFragment : Fragment() {
     private var songDescriptionFlow: StateFlow<String>? = null
 
     private var cadenceFlowObserver: Job? = null
-    private var homeTextFlowObserver: Job? = null
+    private var InfoFlowObserver: Job? = null
     private var songNameFlowObserver: Job? = null
     private var songDescriptionFlowObserver: Job? = null
 
@@ -67,19 +67,24 @@ class HomeFragment : Fragment() {
             songDescriptionFlow = flows[3]
         }
 
+        if (cadenceFlow != null && infoFlow != null && songNameFlow != null && songDescriptionFlow != null) {
+            binding.tvInfo.text = infoFlow?.value
+            binding.tvCadence.text = cadenceFlow?.value
+            binding.tvSongName.text = songNameFlow?.value
+            binding.tvSongDescription.text = songDescriptionFlow?.value
+        }
+        binding.btnSkipSong.isEnabled = mainActivity.serviceBoundFlow.value
+
+        observeFlows()
+        Log.d("HomeFragment", "service connected")
+    }
+
+    private fun observeFlows() {
         if (cadenceFlow == null || infoFlow == null || songNameFlow == null || songDescriptionFlow == null) {
             Log.w("HomeFragment", "Some of the service's flows are null, aborting...")
             return
         }
-
-        Log.d("HomeFragment", "service connected")
-
-        binding.tvInfo.text = infoFlow?.value
-        binding.tvCadence.text = cadenceFlow?.value
-        binding.tvSongName.text = songNameFlow?.value
-        binding.tvSongDescription.text = songDescriptionFlow?.value
-
-        // observe the flows
+        
         if (cadenceFlowObserver == null) {
             cadenceFlowObserver = lifecycleScope.launchWhenStarted {
                 cadenceFlow?.collectLatest {
@@ -89,11 +94,11 @@ class HomeFragment : Fragment() {
             }
         }
 
-        if (homeTextFlowObserver == null) {
-            homeTextFlowObserver = lifecycleScope.launchWhenStarted {
+        if (InfoFlowObserver == null) {
+            InfoFlowObserver = lifecycleScope.launchWhenStarted {
                 infoFlow?.collectLatest {
                     binding.tvInfo.text = it
-                    Log.d("HomeFragment", "homeText updated")
+                    Log.d("HomeFragment", "info updated")
                 }
             }
         }
@@ -115,8 +120,6 @@ class HomeFragment : Fragment() {
                 }
             }
         }
-
-        binding.btnSkipSong.isEnabled = mainActivity.serviceBoundFlow.value
     }
 
     private fun onServiceDisconnected() {
@@ -135,11 +138,14 @@ class HomeFragment : Fragment() {
         songNameFlow = null
         songDescriptionFlow = null
 
-        // cancel the flow observing
+        cancelFlowObserving()
+    }
+
+    private fun cancelFlowObserving() {
         cadenceFlowObserver?.cancel(CancellationException())
         cadenceFlowObserver = null
-        homeTextFlowObserver?.cancel(CancellationException())
-        homeTextFlowObserver = null
+        InfoFlowObserver?.cancel(CancellationException())
+        InfoFlowObserver = null
         songNameFlowObserver?.cancel(CancellationException())
         songNameFlowObserver = null
         songDescriptionFlowObserver?.cancel(CancellationException())
@@ -258,14 +264,14 @@ class HomeFragment : Fragment() {
     override fun onResume() {
         super.onResume()
         if (mainActivity.serviceBoundFlow.value) {
-            onServiceConnected()
+            observeFlows()
         }
     }
 
     override fun onPause() {
         super.onPause()
         if (mainActivity.serviceBoundFlow.value) {
-            onServiceDisconnected()
+            cancelFlowObserving()
         }
     }
 }
