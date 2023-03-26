@@ -137,8 +137,13 @@ class PacetifyService : Service(), SensorEventListener {
             orderSkipSong()
             return START_REDELIVER_INTENT
         }
+        Log.d("service", "Pacetify service started")
 
-        makeServiceForeground()
+        shouldStartPlaying = intent?.getBooleanExtra("tick", true) ?: true
+        // We want the service to be foreground (and create a notification) only when it has been
+        // started to run for a long time, not when it has been started to play individual songs
+        // is the Songs dialogFragment - in that case, it will be temporary
+        if (shouldStartPlaying) makeServiceForeground()
 
         wakeLock =
             (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
@@ -146,8 +151,6 @@ class PacetifyService : Service(), SensorEventListener {
                     acquire()
                 }
             }
-
-        shouldStartPlaying = intent?.getBooleanExtra("tick", true) ?: true
 
         sensorManager = applicationContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         audioManager = applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -158,9 +161,6 @@ class PacetifyService : Service(), SensorEventListener {
         mainHandler = Handler(this.mainLooper) // create a handler for our clock
 
         val stepSensor = sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
-
-        Log.d("service", "Pacetify service started")
-
         if (stepSensor == null) {
             Toast.makeText(applicationContext, "No sensor detected on this device", Toast.LENGTH_LONG).show()
             shouldStartPlaying = false
@@ -267,6 +267,10 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     fun onSpotifyAppRemoteConnected() {
+        // When we start the service only to play individual songs in the Song dialogFragment,
+        // we do not wish to execute any of this
+        if (!shouldStartPlaying) return
+
         //send the current song info into its flow - subscribe to the player state
         playerStateSubscription = mSpotifyAppRemote?.playerApi?.subscribeToPlayerState()
             ?.setEventCallback { event ->
@@ -288,23 +292,21 @@ class PacetifyService : Service(), SensorEventListener {
                 ).show()
         }
 
-        if (shouldStartPlaying) {
-            CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-                // play the first song
-                songsLoadingMutex.lock()
-                val songIdx = chooseSongIdx(INITIAL_CADENCE)
-                if (songIdx == -1) {
-                    songsLoadingMutex.unlock()
-                    return@launch
-                }
-                val song = songs[songIdx]
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            // play the first song
+            songsLoadingMutex.lock()
+            val songIdx = chooseSongIdx(INITIAL_CADENCE)
+            if (songIdx == -1) {
                 songsLoadingMutex.unlock()
-                playSong(song)
-                currentSong = song
-                wasResting = true
-
-                startTicking()
+                return@launch
             }
+            val song = songs[songIdx]
+            songsLoadingMutex.unlock()
+            playSong(song)
+            currentSong = song
+            wasResting = true
+
+            startTicking()
         }
     }
 
