@@ -245,9 +245,8 @@ class HomeFragment : Fragment() {
     }
 
     private fun requestBackgroundPermission() {
-        val packageName: String = mainActivity.packageName
-        val pm = mainActivity.getSystemService(Context.POWER_SERVICE) as PowerManager
-        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+        val powerManager = mainActivity.getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (!powerManager.isIgnoringBatteryOptimizations(mainActivity.packageName)) {
             AlertDialog.Builder(mainActivity)
                 .setTitle("Please allow background activity for Pacetify")
                 .setMessage("This app will not work without properly without background activity " +
