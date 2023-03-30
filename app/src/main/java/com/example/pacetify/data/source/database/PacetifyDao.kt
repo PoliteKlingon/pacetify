@@ -23,6 +23,9 @@ interface PacetifyDao {
     @Query("SELECT * FROM Song INNER JOIN Playlist ON Playlist.name = Song.fromPlaylist WHERE Playlist.enabled = true GROUP BY uri ORDER BY bpm ASC")
     suspend fun getEnabledSongsDistinct(): Array<Song>
 
+    @Query("SELECT COUNT(*) FROM Song INNER JOIN Playlist ON Playlist.name = Song.fromPlaylist WHERE Playlist.enabled = true")
+    suspend fun numEnabledSongsDistinct(): Int
+
     @Query("SELECT * FROM Song ORDER BY name ASC")
     suspend fun getSongsWithDuplicates(): Array<Song>
 
@@ -34,6 +37,9 @@ interface PacetifyDao {
 
     @Query("SELECT * FROM Playlist")
     suspend fun getPlaylists(): List<Playlist>
+
+    @Query("SELECT COUNT(*) FROM Playlist")
+    suspend fun numOfPlaylists(): Int
 
     @Query("SELECT COUNT(*) FROM Playlist WHERE name = :name")
     suspend fun existenceOfPlaylists(name: String): Int

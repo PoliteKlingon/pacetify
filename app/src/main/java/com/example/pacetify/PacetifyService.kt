@@ -588,7 +588,10 @@ class PacetifyService : Service(), SensorEventListener {
     private fun chooseSongIdx(bpm: Int): Int {
         if (songs.isEmpty()) {
             //Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show() //TODO how
-            infoFlow.value = "You must add some playlist first"
+            CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+                if (dao?.numOfPlaylists() == 0) infoFlow.value = "You must add some playlist first."
+                else infoFlow.value = "There are no songs to be played. You have to enable at least one playlist."
+            }
             currentSong = null
             stopTicking()
             return -1

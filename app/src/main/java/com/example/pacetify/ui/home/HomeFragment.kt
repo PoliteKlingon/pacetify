@@ -19,10 +19,13 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.pacetify.MainActivity
 import com.example.pacetify.R
+import com.example.pacetify.data.source.database.PacetifyDao
+import com.example.pacetify.data.source.database.PacetifyDatabase
 import com.example.pacetify.databinding.FragmentHomeBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.util.concurrent.CancellationException
 
 /**
@@ -48,6 +51,12 @@ class HomeFragment : Fragment() {
 
     private lateinit var mainActivity: MainActivity
     private var serviceBoundFlowObserver: Job? = null
+
+    private lateinit var powerManager: PowerManager
+    private var bgActivityAllowed = true
+    private var activityTrackingAllowed = true
+
+    private lateinit var dao: PacetifyDao
 
     private fun onServiceConnected() {
         binding.btnOnOff.text = getString(R.string.service_on)
@@ -126,8 +135,7 @@ class HomeFragment : Fragment() {
         binding.btnOnOff.text = getString(R.string.service_off)
         binding.tvCadence.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20.0F)
 
-        if (binding.tvCadence.text != getString(R.string.activity_background_disabled_warning))
-            binding.tvCadence.text = getString(R.string.service_off_description)
+        setDisconnectedUiState()
         binding.tvInfo.text = ""
         binding.tvSongName.text = ""
         binding.tvSongDescription.text = ""
@@ -139,6 +147,35 @@ class HomeFragment : Fragment() {
         songDescriptionFlow = null
 
         cancelFlowObserving()
+    }
+
+    private fun setDisconnectedUiState() {
+        lifecycleScope.launch {
+            try {
+                if (!bgActivityAllowed) {
+                    binding.tvCadence.text = getString(R.string.activity_background_disabled_warning)
+                    binding.btnOnOff.isEnabled = false
+                } else if (!activityTrackingAllowed) {
+                    binding.tvCadence.text = getString(R.string.activity_recognition_disabled_warning)
+                    binding.btnOnOff.isEnabled = false
+                } else if (dao.numOfPlaylists() == 0) {
+                    binding.tvCadence.text = getString(R.string.home_no_playlists)
+                    binding.btnOnOff.isEnabled = false
+                } else if (dao.numEnabledSongsDistinct() == 0) {
+                    binding.tvCadence.text = getString(R.string.home_no_enabled_playlists)
+                    binding.btnOnOff.isEnabled = false
+                } else if (!mainActivity.serviceBoundFlow.value) {
+                    binding.tvCadence.text = getString(R.string.service_off_description)
+                    binding.btnOnOff.isEnabled = true
+                } else {
+                    binding.btnOnOff.isEnabled = true
+                }
+            } catch (_: java.lang.NullPointerException) {
+                // There is a possibility that during this coroutine the user went away and some
+                // of the references became null. In that case, we do not wish to update the text
+                // anyways, so we just catch the exception and proceed.
+            }
+        }
     }
 
     private fun cancelFlowObserving() {
@@ -170,11 +207,13 @@ class HomeFragment : Fragment() {
     ): View {
         /*val homeViewModel =
             ViewModelProvider(this).get(HomeViewModel::class.java)*/
+        mainActivity = requireActivity() as MainActivity
+        powerManager = mainActivity.getSystemService(Context.POWER_SERVICE) as PowerManager
+
+        dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         val root: View = binding.root
-
-        mainActivity = requireActivity() as MainActivity
 
         serviceBoundFlowObserver = lifecycleScope.launchWhenStarted {
             mainActivity.serviceBoundFlow.collectLatest {
@@ -210,8 +249,7 @@ class HomeFragment : Fragment() {
         }
 
         if (cadenceFlow == null)
-            if (binding.tvCadence.text != getString(R.string.activity_background_disabled_warning))
-                binding.tvCadence.text = getString(R.string.service_off_description)
+            setDisconnectedUiState()
         if (infoFlow == null) binding.tvInfo.text = ""
         if (songNameFlow == null) binding.tvSongName.text = ""
         if (songDescriptionFlow == null) binding.tvSongDescription.text = ""
@@ -226,38 +264,36 @@ class HomeFragment : Fragment() {
         val requestPermission = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
-            if (isGranted) {
-                binding.btnOnOff.isEnabled = true
-                if (binding.tvCadence.text != getString(R.string.activity_background_disabled_warning))
-                    binding.tvCadence.text = getString(R.string.service_off_description)
-            } else {
-                binding.tvCadence.text = getString(R.string.activity_recognition_disabled_warning)
-                binding.btnOnOff.isEnabled = false
-            }
+            activityTrackingAllowed = isGranted
+            setDisconnectedUiState()
         }
 
-        if (ContextCompat.checkSelfPermission(
-                requireActivity(),
-                Manifest.permission.ACTIVITY_RECOGNITION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q)
-            requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            activityTrackingAllowed = ContextCompat.checkSelfPermission(
+                                        mainActivity, Manifest.permission.ACTIVITY_RECOGNITION
+                                        ) == PackageManager.PERMISSION_GRANTED
+
+            if (!activityTrackingAllowed)
+                requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        } else {
+            activityTrackingAllowed = true;
+        }
     }
 
     private fun requestBackgroundPermission() {
-        val powerManager = mainActivity.getSystemService(Context.POWER_SERVICE) as PowerManager
         if (!powerManager.isIgnoringBatteryOptimizations(mainActivity.packageName)) {
             AlertDialog.Builder(mainActivity)
                 .setTitle("Please allow background activity for Pacetify")
-                .setMessage("This app will not work without properly without background activity " +
+                .setMessage("Pacetify will not measure your cadence correctly without background activity " +
                         "enabled. \nPlease enable it (Apps -> Pacetify -> Battery usage -> Allow " +
                         "background activity) and restart Pacetify.")
                 .setPositiveButton("OK")  { dialog, _ -> dialog.dismiss() }
                 .show()
 
-            binding.tvCadence.text = getString(R.string.activity_background_disabled_warning)
-            binding.btnOnOff.isEnabled = false
+            bgActivityAllowed = false
+            setDisconnectedUiState()
         }
+        else bgActivityAllowed = true
     }
 
     override fun onResume() {
