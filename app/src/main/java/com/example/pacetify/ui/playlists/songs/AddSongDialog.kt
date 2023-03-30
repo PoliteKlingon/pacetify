@@ -39,7 +39,7 @@ class AddSongDialog(
             val uri = etNewSongUri.text.toString()
 
             if (uri.isEmpty())
-                Toast.makeText(mainActivity, "URL can not be empty", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "URL cannot be empty", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifySongUri(uri))
                 Toast.makeText(mainActivity, "Invalid song URL", Toast.LENGTH_LONG).show()
             else {try {

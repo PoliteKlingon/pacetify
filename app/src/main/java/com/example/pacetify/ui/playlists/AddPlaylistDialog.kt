@@ -45,9 +45,9 @@ class AddPlaylistDialog(
             val uri = etNewPlaylistUri.text.toString()
 
             if (name.isEmpty())
-                Toast.makeText(mainActivity, "Name can not be empty", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "Name cannot be empty", Toast.LENGTH_LONG).show()
             else if (uri.isEmpty())
-                Toast.makeText(mainActivity, "URL can not be empty", Toast.LENGTH_LONG).show()
+                Toast.makeText(mainActivity, "URL cannot be empty", Toast.LENGTH_LONG).show()
             else if (playlists.map { p -> p.name } .contains(name))
                 Toast.makeText(mainActivity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifyPlaylistUri(uri))
