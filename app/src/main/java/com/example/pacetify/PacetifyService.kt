@@ -579,7 +579,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     private val clock = object : Runnable {
         override fun run() {
-            mainHandler.postDelayed(this, 1000)
+            mainHandler.postDelayed(this, 998)
             tick()
         }
     }
