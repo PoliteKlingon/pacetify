@@ -496,7 +496,7 @@ class PacetifyService : Service(), SensorEventListener {
         if (wasResting) wasResting = false
     }
 
-    private fun pauseSong() {
+    fun pauseSong() {
         mSpotifyAppRemote?.playerApi?.pause()
     }
 

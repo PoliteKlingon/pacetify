@@ -3,6 +3,7 @@ package com.example.pacetify.ui.playlists.songs
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.*
+import android.widget.ImageView
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,40 +26,53 @@ class SongsDialogFragment(
 ): DialogFragment() {
 
     private var _binding: DialogFragmentSongsBinding? = null
-
     private val binding get() = _binding!!
-    private lateinit var songs: MutableList<Song>
-
     private lateinit var mainActivity: MainActivity
 
     private var serviceManuallyStarted = false
+    private lateinit var songs: MutableList<Song>
+    var currentlyPlayingSong: Song? = null
+    private var currentlyPlayingSongIcon: ImageView? = null
+
+    // This function takes care of changing the last played song's icon to play, so there is always
+    // only at most one song with pause icon at a time. It also does the song playing/pausing.
+    fun playSong(song: Song, view: ImageView) {
+        if (mainActivity.serviceBoundFlow.value) {
+            currentlyPlayingSongIcon?.setImageResource(R.drawable.baseline_play_arrow_24)
+            if (song == currentlyPlayingSong) {
+                mainActivity.pacetifyService?.pauseSong()
+                currentlyPlayingSong = null
+                currentlyPlayingSongIcon = null
+            } else {
+                mainActivity.pacetifyService?.playSong(song)
+                currentlyPlayingSong = song
+                currentlyPlayingSongIcon = view
+            }
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
-        mainActivity = requireActivity() as MainActivity
-
         isCancelable = true
 
+        mainActivity = requireActivity() as MainActivity
         _binding = DialogFragmentSongsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         val dao = PacetifyDatabase.getInstance(requireActivity()).pacetifyDao
-
         songs = mutableListOf()
 
         binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
-
         class SongAdapterDataObserver: RecyclerView.AdapterDataObserver() {
             override fun onChanged() {
                 binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
             }
         }
 
-        val adapter = SongAdapter(songs, dao, lifecycleScope, activity as MainActivity)
+        val adapter = SongAdapter(songs, dao, lifecycleScope, activity as MainActivity, this)
         binding.rvSongs.adapter = adapter
         adapter.registerAdapterDataObserver(SongAdapterDataObserver())
         binding.rvSongs.layoutManager = LinearLayoutManager(activity)
