@@ -1,5 +1,6 @@
 package com.example.pacetify.ui.playlists
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
@@ -18,7 +19,7 @@ import kotlinx.coroutines.launch
  * it can be deleted or clicked on to manage its songs.
  */
 class PlaylistAdapter(
-    private var playlistURLs: MutableList<Playlist>,
+    private var playlists: MutableList<Playlist>,
     private val dao: PacetifyDao,
     private val lifecycleScope: LifecycleCoroutineScope,
     private val mainActivity: MainActivity,
@@ -38,7 +39,7 @@ class PlaylistAdapter(
     }
 
     override fun onBindViewHolder(holder: PlaylistViewHolder, position: Int) {
-        val currentPlaylist = playlistURLs[position]
+        val currentPlaylist = playlists[position]
         holder.binding.apply {
             tvPlaylistName.text = currentPlaylist.name
             lifecycleScope.launch  {
@@ -47,13 +48,19 @@ class PlaylistAdapter(
             }
 
             cbEnable.isChecked = currentPlaylist.enabled
+            Log.d("ASDASD", playlists.map { pl -> pl.enabled }.toString())
 
-            cbEnable.setOnCheckedChangeListener { _, isChecked ->
+            // We do not use setOnCheckedChangeListener because the recycler list might change it
+            // while loading, we want this to happen only when it is clicked explicitly
+            cbEnable.setOnClickListener {
+                val isChecked = cbEnable.isChecked
+                playlists[position].enabled = isChecked
                 lifecycleScope.launch {
                     val updatedPlaylist = currentPlaylist.copy(enabled = isChecked)
                     dao.updatePlaylist(updatedPlaylist)
                     mainActivity.notifyServicePlaylists()
                 }
+                Log.d("ASDASD", playlists.map { pl -> pl.enabled }.toString())
             }
 
             // display dialog to ensure that the user really wanted to delete the playlist
@@ -65,8 +72,8 @@ class PlaylistAdapter(
                         dialog.dismiss()
                     }
                     .setPositiveButton("Delete")  { dialog, _ ->
-                        playlistURLs.remove(currentPlaylist)
-                        this@PlaylistAdapter.notifyDataSetChanged()
+                        playlists.remove(currentPlaylist)
+                        this@PlaylistAdapter.notifyItemRemoved(position)
                         lifecycleScope.launch {
                             dao.deletePlaylist(currentPlaylist.name)
                         }
@@ -78,13 +85,13 @@ class PlaylistAdapter(
 
             // onClick display songs in the playlist as a dialogFragment
             clPlaylist.setOnClickListener {
-                SongsDialogFragment(this@PlaylistAdapter, currentPlaylist.name)
+                SongsDialogFragment(this@PlaylistAdapter, currentPlaylist.name, position)
                     .show(childFragmentManager, "")
             }
         }
     }
 
     override fun getItemCount(): Int {
-        return playlistURLs.size
+        return playlists.size
     }
 }

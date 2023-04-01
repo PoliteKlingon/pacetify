@@ -21,8 +21,9 @@ import kotlinx.coroutines.launch
  * A dialogFragment for managing the songs of the playlist.
  */
 class SongsDialogFragment(
-    private val adapter: PlaylistAdapter,
-    private val playlistName: String
+    private val playlistAdapter: PlaylistAdapter,
+    private val playlistName: String,
+    private val position: Int
 ): DialogFragment() {
 
     private var _binding: DialogFragmentSongsBinding? = null
@@ -95,7 +96,7 @@ class SongsDialogFragment(
                         adapter.notifyDataSetChanged()
                         binding.tvNoSongs.text = ""
                         if (mainActivity.serviceBoundFlow.value)
-                            mainActivity.pacetifyService?.notifyPlaylistsChanged()
+                            mainActivity.pacetifyService?.notifyPlaylistsChanged(restartTicking = false)
                     }
                 }
                 show()
@@ -141,6 +142,8 @@ class SongsDialogFragment(
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        adapter.notifyDataSetChanged()
+        // We could have added or deleted a song, so we update the list for it to have correct
+        // song counts
+        playlistAdapter.notifyItemChanged(position)
     }
 }

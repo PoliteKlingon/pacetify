@@ -548,8 +548,8 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     // this is called by the activity when the playlists have been changed
-    fun notifyPlaylistsChanged() {
-        loadSongs()
+    fun notifyPlaylistsChanged(restartTicking: Boolean = true) {
+        loadSongs(restartTicking = restartTicking)
     }
 
     // this is called by the activity when the settings have been changed

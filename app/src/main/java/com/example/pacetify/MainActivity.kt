@@ -77,9 +77,9 @@ class MainActivity : AppCompatActivity() {
             pacetifyService?.notifySettingsChanged()
     }
 
-    fun notifyServicePlaylists() {
+    fun notifyServicePlaylists(restartTicking: Boolean = true) {
         if (serviceBoundFlow.value)
-            pacetifyService?.notifyPlaylistsChanged()
+            pacetifyService?.notifyPlaylistsChanged(restartTicking = restartTicking)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

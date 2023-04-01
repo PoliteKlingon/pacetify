@@ -58,11 +58,11 @@ class SongAdapter(
                     }
                     .setPositiveButton("Delete")  { dialog, _ ->
                         songs.remove(currentSong)
-                        this@SongAdapter.notifyDataSetChanged()
+                        this@SongAdapter.notifyItemRemoved(position)
                         lifecycleScope.launch {
                             dao.deleteSong(currentSong)
                         }
-                        mainActivity.notifyServicePlaylists()
+                        mainActivity.notifyServicePlaylists(restartTicking = false)
                         dialog.dismiss()
                     }
                     .show()
