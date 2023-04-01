@@ -521,7 +521,7 @@ class PacetifyService : Service(), SensorEventListener {
                 audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
                     ((i / 10f) * originalVolume).toInt(),
-                    AudioManager.FLAG_SHOW_UI
+                    0 //AudioManager.FLAG_SHOW_UI
                 )
                 delay(crossfadeStepMs)
                 i--
@@ -537,7 +537,7 @@ class PacetifyService : Service(), SensorEventListener {
                 audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
                     ((i / 10f) * originalVolume).toInt(),
-                    AudioManager.FLAG_SHOW_UI
+                    0 //AudioManager.FLAG_SHOW_UI
                 )
                 delay(crossfadeStepMs)
                 i++
