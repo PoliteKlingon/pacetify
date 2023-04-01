@@ -63,7 +63,7 @@ class SongsDialogFragment(
         _binding = DialogFragmentSongsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val dao = PacetifyDatabase.getInstance(requireActivity()).pacetifyDao
+        val dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
         songs = mutableListOf()
 
         binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
@@ -86,17 +86,18 @@ class SongsDialogFragment(
         // the option to add a song into the playlist
         binding.fabAddSong.setOnClickListener {
             AddSongDialog(
-                requireActivity() as MainActivity, songs, lifecycle, playlistName
+                mainActivity, songs, lifecycle, playlistName
             ).apply {
                 setOnDismissListener{
-                    songs.removeAll { true }
                     lifecycleScope.launch {
                         delay(1000) // Wait for the song to load
+                        // We do not know where is the new song in the list, so we have to reload it
+                        songs.removeAll { true }
                         songs.addAll(dao.getSongsFromPlaylist(playlistName))
                         adapter.notifyDataSetChanged()
                         binding.tvNoSongs.text = ""
                         if (mainActivity.serviceBoundFlow.value)
-                            mainActivity.pacetifyService?.notifyPlaylistsChanged(restartTicking = false)
+                            mainActivity.notifyServicePlaylists(restartTicking = false)
                     }
                 }
                 show()

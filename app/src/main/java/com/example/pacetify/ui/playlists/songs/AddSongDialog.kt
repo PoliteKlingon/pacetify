@@ -45,7 +45,7 @@ class AddSongDialog(
             else {try {
                     //import song
                     mainActivity.webApi.addSongWithName(uri, playlistName, lifecycle.coroutineScope)
-                    mainActivity.notifyServicePlaylists()
+                    mainActivity.notifyServicePlaylists(restartTicking = false)
 
                     dismiss()
                 }
