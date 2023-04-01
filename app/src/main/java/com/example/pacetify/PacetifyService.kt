@@ -214,7 +214,7 @@ class PacetifyService : Service(), SensorEventListener {
 
             // Create the skip song action
             val skipAction = Notification.Action.Builder(
-                Icon.createWithResource(this, R.drawable.ic_skip), //TODO another Icon
+                Icon.createWithResource(this, R.drawable.ic_skip),
                 "Skip Song",
                 pendingSkipIntent
             ).build()
@@ -380,8 +380,8 @@ class PacetifyService : Service(), SensorEventListener {
         if (currentlyResting) currentRestingTime--
 
         // here come all the reasons why should a song be skipped
-        // we always deal with it in some manner, but it always leads to selecting a new song
-        // and we only want that to happen once, therefore it is an "else if" scenario
+        // we always deal with it in some specific manner, but it always leads to selecting a new
+        // song and we only want that to happen once, therefore it is an "else if" scenario
 
         if (rest && !isRunning() && !currentlyResting && !wasResting) onStoppedRunning()
 
@@ -389,7 +389,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         else if (isRunning() && currentCadence > RUNNING_THRESHOLD
             && timePlayedFromSong > SONG_MINIMAL_SECONDS
-            && currentSong != null && (abs(cadence - currentSong!!.bpm) > 5)) //TODO maybe some smarter way? - more consistent speed increase leads to song change
+            && currentSong != null && (abs(cadence - currentSong!!.bpm) > 4)) //TODO tweak this according to test
             skipSong()
 
         else if (timeToSongEnd <= 10) {
@@ -587,7 +587,6 @@ class PacetifyService : Service(), SensorEventListener {
     // choosing the song based on the desired bpm
     private fun chooseSongIdx(bpm: Int): Int {
         if (songs.isEmpty()) {
-            //Toast.makeText(applicationContext, "You must add some playlist first", Toast.LENGTH_LONG).show() //TODO how
             CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
                 if (dao?.numOfPlaylists() == 0) infoFlow.value = "You must add some playlist first."
                 else infoFlow.value = "There are no songs to be played. You have to enable at least one playlist."
