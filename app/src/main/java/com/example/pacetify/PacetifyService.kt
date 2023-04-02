@@ -287,7 +287,7 @@ class PacetifyService : Service(), SensorEventListener {
             else
                 Toast.makeText(
                     applicationContext,
-                    "Enabling crossfade in Spotify app settings leads to better experience",
+                    "Enabling crossfade in the Spotify app settings leads to a better experience",
                     Toast.LENGTH_LONG
                 ).show()
         }

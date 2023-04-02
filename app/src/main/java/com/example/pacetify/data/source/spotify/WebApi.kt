@@ -106,7 +106,7 @@ class WebApi(val activity: MainActivity) {
         val request: AuthorizationRequest =
             AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI)
                 .setShowDialog(false)
-                .setScopes(arrayOf()) //we do not need any special scopes
+                .setScopes(arrayOf("app-remote-control")) //we will need to control the Spotify app
                 .setCampaign("") //no campaign needed
                 .build()
 
