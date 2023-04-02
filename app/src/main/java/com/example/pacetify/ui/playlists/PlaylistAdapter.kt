@@ -48,7 +48,6 @@ class PlaylistAdapter(
             }
 
             cbEnable.isChecked = currentPlaylist.enabled
-            Log.d("ASDASD", playlists.map { pl -> pl.enabled }.toString())
 
             // We do not use setOnCheckedChangeListener because the recycler list might change it
             // while loading, we want this to happen only when it is clicked explicitly
@@ -60,7 +59,6 @@ class PlaylistAdapter(
                     dao.updatePlaylist(updatedPlaylist)
                     mainActivity.notifyServicePlaylists()
                 }
-                Log.d("ASDASD", playlists.map { pl -> pl.enabled }.toString())
             }
 
             // display dialog to ensure that the user really wanted to delete the playlist

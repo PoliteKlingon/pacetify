@@ -41,6 +41,9 @@ class AddPlaylistDialog(
         val btnAddPlaylist = findViewById<Button>(R.id.btnAddPlaylist)
 
         btnAddPlaylist.setOnClickListener {
+
+            if (!mainActivity.webApi.isTokenAcquired())
+                mainActivity.webApi.requestToken(mainActivity)
             val name = etNewPlaylistName.text.toString()
             val uri = etNewPlaylistUri.text.toString()
 
@@ -75,7 +78,7 @@ class AddPlaylistDialog(
                 catch (e: NotConnectedException) {
                     Toast.makeText(
                         mainActivity,
-                        "Please connect to the internet to add a playlist",
+                        "Please connect to the internet and try again",
                         Toast.LENGTH_SHORT).show()
                 }
             }

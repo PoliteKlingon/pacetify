@@ -102,7 +102,7 @@ class WebApi(val activity: MainActivity) {
     private var dao = PacetifyDatabase.getInstance(activity).pacetifyDao
 
     // request token for the web API
-    private fun requestToken(activity: MainActivity) {
+    fun requestToken(activity: MainActivity) {
         val request: AuthorizationRequest =
             AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI)
                 .setShowDialog(false)
@@ -118,7 +118,7 @@ class WebApi(val activity: MainActivity) {
         mCall?.cancel()
     }
 
-    private fun isTokenAcquired(): Boolean {
+    fun isTokenAcquired(): Boolean {
         return mAccessToken != null
     }
 
