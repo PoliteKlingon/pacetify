@@ -10,6 +10,12 @@ class UriUtils {
                             || uri.matches(Regex("https://open.spotify.com/user/[^/]*/playlist/[^/]*")))
         }
 
+        fun isValidSpotifyAlbumUri(uri: String) : Boolean {
+            return URLUtil.isValidUrl(uri) &&
+                    (uri.matches(Regex("https://open.spotify.com/album/[^/]*"))
+                            || uri.matches(Regex("https://open.spotify.com/user/[^/]*/album/[^/]*")))
+        }
+
         fun isValidSpotifySongUri(uri: String) : Boolean {
             return URLUtil.isValidUrl(uri) &&
                     (uri.matches(Regex("https://open.spotify.com/track/[^/]*"))

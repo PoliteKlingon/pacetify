@@ -128,11 +128,15 @@ class WebApi(val activity: MainActivity) {
 
     // importing songs from the just created playlist
     // this function only gets the total count of tracks in the playlist
-    fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope) {
-        if (!isTokenAcquired()) throw NotConnectedException()
+    fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope, isAlbum: Boolean) {
+        if (!isTokenAcquired()) {
+            requestToken(activity)
+            throw NotConnectedException()
+        }
 
+        val endpoint = if (isAlbum) "albums" else "playlists"
         val request: Request = Request.Builder()
-            .url("https://api.spotify.com/v1/playlists/${playlist.id}/tracks")
+            .url("https://api.spotify.com/v1/$endpoint/${playlist.id}/tracks")
             .addHeader("Authorization", "Bearer $mAccessToken")
             .build()
 
@@ -154,7 +158,7 @@ class WebApi(val activity: MainActivity) {
                     while (currentItems < totalItems) {
                         // As the web API does support getting at most 50 results at a time,
                         // we have to split the query
-                        addLimitedSongsFromPlaylist(playlist, currentItems, 50, lifecycleScope)
+                        addLimitedSongsFromPlaylist(playlist, currentItems, 50, lifecycleScope, isAlbum)
                         currentItems += 50
                     }
                 } catch (e: JSONException) {
@@ -166,9 +170,13 @@ class WebApi(val activity: MainActivity) {
     }
 
     // this function gets the songUris from the playlist - 50 at a time
-    private fun addLimitedSongsFromPlaylist(playlist: Playlist, offset: Int, limit: Int, lifecycleScope: LifecycleCoroutineScope) {
+    private fun addLimitedSongsFromPlaylist(playlist: Playlist,
+                                            offset: Int, limit: Int,
+                                            lifecycleScope: LifecycleCoroutineScope,
+                                            isAlbum: Boolean) {
+        val endpoint = if (isAlbum) "albums" else "playlists"
         val request: Request = Request.Builder()
-            .url("https://api.spotify.com/v1/playlists/${playlist.id}/tracks?offset=$offset&limit=$limit")
+            .url("https://api.spotify.com/v1/$endpoint/${playlist.id}/tracks?offset=$offset&limit=$limit")
             .addHeader("Authorization", "Bearer $mAccessToken")
             .build()
 
@@ -189,7 +197,10 @@ class WebApi(val activity: MainActivity) {
                     val songUris = mutableListOf<String>()
                     for (i in 0 until arr.length()) {
                         val item = arr.getJSONObject(i)
-                        val songUri = item.getJSONObject("track").getString("uri")
+                        val songUri =
+                            if (isAlbum) item.getString("uri")
+                            else item.getJSONObject("track").getString("uri")
+
                         songUris.add(songUri)
                     }
                     addMultipleSongsWithName(songUris, playlist.name, lifecycleScope)
@@ -296,7 +307,10 @@ class WebApi(val activity: MainActivity) {
     // import a single song
     // get the basic info about the song
     fun addSongWithName(songUri: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
-        if (!isTokenAcquired()) throw NotConnectedException()
+        if (!isTokenAcquired()) {
+            requestToken(activity)
+            throw NotConnectedException()
+        }
 
         addMultipleSongsWithName(listOf(songUri), playlistName, lifecycleScope)
     }

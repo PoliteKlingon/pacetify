@@ -41,9 +41,6 @@ class AddPlaylistDialog(
         val btnAddPlaylist = findViewById<Button>(R.id.btnAddPlaylist)
 
         btnAddPlaylist.setOnClickListener {
-
-            if (!mainActivity.webApi.isTokenAcquired())
-                mainActivity.webApi.requestToken(mainActivity)
             val name = etNewPlaylistName.text.toString()
             val uri = etNewPlaylistUri.text.toString()
 
@@ -53,15 +50,16 @@ class AddPlaylistDialog(
                 Toast.makeText(mainActivity, "URL cannot be empty", Toast.LENGTH_LONG).show()
             else if (playlists.map { p -> p.name } .contains(name))
                 Toast.makeText(mainActivity, "Playlist \"$name\" already exists", Toast.LENGTH_LONG).show()
-            else if (!UriUtils.isValidSpotifyPlaylistUri(uri))
-                Toast.makeText(mainActivity, "Invalid playlist URL", Toast.LENGTH_LONG).show()
+            else if (!UriUtils.isValidSpotifyPlaylistUri(uri) && !UriUtils.isValidSpotifyAlbumUri(uri))
+                Toast.makeText(mainActivity, "Invalid playlist/album URL", Toast.LENGTH_LONG).show()
             else {
                 val id = UriUtils.extractIdFromUri(uri)
                 val playlist = Playlist(id, name, true)
+                val isAlbum = UriUtils.isValidSpotifyAlbumUri(uri)
 
                 // import songs form the playlist
                 try {
-                    mainActivity.webApi.addSongsFromPlaylist(playlist, lifecycle.coroutineScope)
+                    mainActivity.webApi.addSongsFromPlaylist(playlist, lifecycle.coroutineScope, isAlbum)
 
                     playlists.add(playlist)
                     adapter.notifyItemInserted(playlists.size - 1)

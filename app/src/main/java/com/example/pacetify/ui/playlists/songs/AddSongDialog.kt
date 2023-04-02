@@ -38,9 +38,6 @@ class AddSongDialog(
         btnAddSong.setOnClickListener {
             val uri = etNewSongUri.text.toString()
 
-            if (!mainActivity.webApi.isTokenAcquired())
-                mainActivity.webApi.requestToken(mainActivity)
-
             if (uri.isEmpty())
                 Toast.makeText(mainActivity, "URL cannot be empty", Toast.LENGTH_LONG).show()
             else if (!UriUtils.isValidSpotifySongUri(uri))
