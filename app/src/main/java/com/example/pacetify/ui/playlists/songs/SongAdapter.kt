@@ -3,7 +3,6 @@ package com.example.pacetify.ui.playlists.songs
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
-import androidx.core.graphics.drawable.toDrawable
 import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.RecyclerView
 import com.example.pacetify.MainActivity

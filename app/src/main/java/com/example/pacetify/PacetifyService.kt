@@ -58,8 +58,8 @@ class PacetifyService : Service(), SensorEventListener {
     private var cadencePreviousSize = 10
 
     // handler for our clock
-    lateinit var mainHandler: Handler
-    var ticking = false
+    private lateinit var mainHandler: Handler
+    private var ticking = false
 
     // flows for passing info to the UI
     private var cadenceFlow = MutableStateFlow("")
@@ -455,7 +455,7 @@ class PacetifyService : Service(), SensorEventListener {
         return arrayOf(cadenceFlow, infoFlow, songNameFlow, songDescriptionFlow)
     }
 
-    fun skipSong() {
+    private fun skipSong() {
         findNextSong() // select the next song and save it in the currentSong variable
         crossfadeSkip() // play the currentSong with crossfade
     }

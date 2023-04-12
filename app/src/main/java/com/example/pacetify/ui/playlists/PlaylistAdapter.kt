@@ -1,6 +1,5 @@
 package com.example.pacetify.ui.playlists
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog

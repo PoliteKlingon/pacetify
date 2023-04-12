@@ -33,46 +33,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!--EditText
-        android:id="@+id/etNewPlaylistName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
-        android:ems="10"
-        android:hint="New playlist name"
-        android:inputType="textPersonName"
-        android:text=""
-        app:layout_constraintBottom_toTopOf="@id/etNewPlaylistUri"
-        app:layout_constraintEnd_toStartOf="@+id/btnAddPlaylist"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <EditText
-        android:id="@+id/etNewPlaylistUri"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="80dp"
-        android:ems="10"
-        android:hint="Spotify playlist URL"
-        android:inputType="textUri"
-        android:text=""
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/btnAddPlaylist"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <Button
-        android:id="@+id/btnAddPlaylist"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginStart="8dp"
-        android:text="Add"
-        app:layout_constraintBaseline_toBaselineOf="@+id/etNewPlaylistUri"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/etNewPlaylistUri" /-->
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabAddPlaylist"
         android:layout_width="wrap_content"

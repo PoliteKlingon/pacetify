@@ -3,7 +3,6 @@ package com.example.pacetify.ui.settings
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import com.example.pacetify.data.PacetifyRepository
-import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map

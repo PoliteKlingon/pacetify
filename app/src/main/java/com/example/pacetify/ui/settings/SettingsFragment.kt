@@ -11,7 +11,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.pacetify.MainActivity
-import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
+import com.example.pacetify.data.source.preferenceFiles.Theme
+import com.example.pacetify.data.source.preferenceFiles.ThemesPreferenceFile
 import com.example.pacetify.databinding.FragmentSettingsBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -73,6 +74,29 @@ class SettingsFragment : Fragment() {
 
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
+
+        val theme = ThemesPreferenceFile.getInstance(mainActivity).theme
+
+        binding.rgTheme.check(
+            when (theme) {
+                Theme.DEFAULT -> binding.rbDefault.id
+                Theme.FIRE    -> binding.rbFire.id 
+                Theme.WATER   -> binding.rbWater.id
+                Theme.EARTH   -> binding.rbEarth.id
+                Theme.AIR     -> binding.rbAir.id
+            }
+        )
+        binding.rgTheme.setOnCheckedChangeListener { _, checkedId ->
+            ThemesPreferenceFile.getInstance(mainActivity).theme = when (checkedId) {
+                binding.rbDefault.id -> Theme.DEFAULT
+                binding.rbFire.id    -> Theme.FIRE
+                binding.rbWater.id   -> Theme.WATER
+                binding.rbEarth.id   -> Theme.EARTH
+                binding.rbAir.id     -> Theme.AIR
+                else -> Theme.DEFAULT
+            }
+            mainActivity.recreate()
+        }
 
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {

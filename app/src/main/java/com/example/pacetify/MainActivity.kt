@@ -12,6 +12,7 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.example.pacetify.data.source.preferenceFiles.ThemesPreferenceFile
 import com.example.pacetify.data.source.spotify.WebApi
 import com.example.pacetify.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -83,10 +84,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(ThemesPreferenceFile.getInstance(this).themeResource)
         super.onCreate(savedInstanceState)
 
         webApi = WebApi.getInstance(this)
-
         serviceBoundFlow = MutableStateFlow(false)
 
         binding = ActivityMainBinding.inflate(layoutInflater)

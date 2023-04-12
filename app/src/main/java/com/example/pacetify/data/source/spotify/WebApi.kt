@@ -118,7 +118,7 @@ class WebApi(val activity: MainActivity) {
         mCall?.cancel()
     }
 
-    fun isTokenAcquired(): Boolean {
+    private fun isTokenAcquired(): Boolean {
         return mAccessToken != null
     }
 

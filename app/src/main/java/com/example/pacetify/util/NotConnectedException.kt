@@ -1,3 +1,3 @@
 package com.example.pacetify.util
 
-class NotConnectedException: Exception(){}
+class NotConnectedException: Exception()

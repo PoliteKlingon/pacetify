@@ -3,6 +3,9 @@ package com.example.pacetify.ui.home
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -276,7 +279,7 @@ class HomeFragment : Fragment() {
             if (!activityTrackingAllowed)
                 requestPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
         } else {
-            activityTrackingAllowed = true;
+            activityTrackingAllowed = true
         }
     }
 
