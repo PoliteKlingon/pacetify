@@ -11,8 +11,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.pacetify.MainActivity
+import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.example.pacetify.data.source.preferenceFiles.Theme
-import com.example.pacetify.data.source.preferenceFiles.ThemesPreferenceFile
 import com.example.pacetify.databinding.FragmentSettingsBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -75,7 +75,7 @@ class SettingsFragment : Fragment() {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val theme = ThemesPreferenceFile.getInstance(mainActivity).theme
+        val theme = SettingsPreferenceFile.getInstance(mainActivity).theme
 
         binding.rgTheme.check(
             when (theme) {
@@ -87,7 +87,7 @@ class SettingsFragment : Fragment() {
             }
         )
         binding.rgTheme.setOnCheckedChangeListener { _, checkedId ->
-            ThemesPreferenceFile.getInstance(mainActivity).theme = when (checkedId) {
+            SettingsPreferenceFile.getInstance(mainActivity).theme = when (checkedId) {
                 binding.rbDefault.id -> Theme.DEFAULT
                 binding.rbFire.id    -> Theme.FIRE
                 binding.rbWater.id   -> Theme.WATER

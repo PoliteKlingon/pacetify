@@ -127,31 +127,36 @@
             android:id="@+id/rbDefault"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Default" />
+            android:text="Default"
+            android:padding="4dp" />
 
         <RadioButton
             android:id="@+id/rbFire"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Fire" />
+            android:text="Fire"
+            android:padding="4dp" />
 
         <RadioButton
             android:id="@+id/rbWater"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Water" />
+            android:text="Water"
+            android:padding="4dp" />
 
         <RadioButton
             android:id="@+id/rbEarth"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Earth" />
+            android:text="Earth"
+            android:padding="4dp" />
 
         <RadioButton
             android:id="@+id/rbAir"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Air" />
+            android:text="Air"
+            android:padding="4dp" />
     </RadioGroup>
 
 
