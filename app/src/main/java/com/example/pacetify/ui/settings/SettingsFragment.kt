@@ -20,7 +20,8 @@ import kotlinx.coroutines.launch
 /**
  * In this fragment the user can change the basic settings for the app - motivating, rest and if
  * the rest is enabled, they can adjust the maximal resting time before an upbeat song is played
- * again. The settings are store in SettingPreferenceFile.
+ * again. Here the user can also choose the color theme for Pacetify.
+ * The settings are store in SettingPreferenceFile.
  */
 class SettingsFragment : Fragment() {
 
@@ -35,6 +36,11 @@ class SettingsFragment : Fragment() {
         _binding = null
     }
 
+    // the slider progress bar needs these two functions to convert between steps on the bar and
+    // the resting time. The bar goes from 0, hence the '+ 1'
+    private fun sliderProgressToTime(progress: Int): Int { return (progress + 1) * 10 }
+    private fun timeToSliderProgress(time: Int): Int { return (time / 10) - 1 }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -42,41 +48,12 @@ class SettingsFragment : Fragment() {
     ): View {
         // we need this activity reference to be able to communicate with the service through it
         val mainActivity = requireActivity() as MainActivity
-        val settingsViewModel by viewModels<SettingsViewModel>()
-
-        // observe our viewmodel data
-        viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                launch {
-                    settingsViewModel.isCheckedMotivate.collect {
-                        binding.swMotivate.isChecked = it
-                    }
-                }
-                launch {
-                    settingsViewModel.isCheckedRest.collectLatest {
-                        binding.swRest.isChecked = it
-                        // enable the slider only if rest option is enabled
-                        binding.sbRest.isEnabled = it
-                    }
-                }
-                launch {
-                    settingsViewModel.restBarProgress.collectLatest {
-                        binding.sbRest.progress = it
-                    }
-                }
-                launch {
-                    settingsViewModel.restTime.collectLatest {
-                        binding.tvRest.text = "Maximal resting time: $it s"
-                    }
-                }
-            }
-        }
+        val settingsFile = SettingsPreferenceFile.getInstance(mainActivity)
 
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         val theme = SettingsPreferenceFile.getInstance(mainActivity).theme
-
         binding.rgTheme.check(
             when (theme) {
                 Theme.DEFAULT -> binding.rbDefault.id
@@ -98,9 +75,20 @@ class SettingsFragment : Fragment() {
             mainActivity.recreate()
         }
 
+        binding.swMotivate.isChecked = settingsFile.motivate
+        binding.swRest.isChecked = settingsFile.rest
+        binding.sbRest.progress = timeToSliderProgress(settingsFile.restTime)
+        // enable the slider only if rest option is enabled
+        binding.sbRest.isEnabled = binding.swRest.isChecked
+        binding.tvRest.text = "Maximal resting time: ${settingsFile.restTime} s"
+
+
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
-                settingsViewModel.setRestTime(progress)
+                val curRestTime = sliderProgressToTime(progress)
+                binding.tvRest.text = "Maximal resting time: $curRestTime s"
+
+                settingsFile.restTime = curRestTime
                 mainActivity.notifyServiceSettings()
             }
 
@@ -109,15 +97,15 @@ class SettingsFragment : Fragment() {
         })
 
         binding.swMotivate.setOnClickListener {
-            settingsViewModel.setMotivate(binding.swMotivate.isChecked)
+            settingsFile.motivate = binding.swMotivate.isChecked
             mainActivity.notifyServiceSettings()
         }
 
         binding.swRest.setOnClickListener {
-            settingsViewModel.setRest(binding.swRest.isChecked)
+            settingsFile.rest = binding.swRest.isChecked
+            binding.sbRest.isEnabled = binding.swRest.isChecked
             mainActivity.notifyServiceSettings()
         }
-
 
         return root
     }
