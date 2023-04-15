@@ -39,19 +39,11 @@ class PlaylistsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        /*val playlistsViewModel =
-            ViewModelProvider(this).get(PlaylistsViewModel::class.java)*/
-
         // we need the activity reference so we can communicate with the service through it
         val mainActivity = requireActivity() as MainActivity
 
         _binding = FragmentPlaylistsBinding.inflate(inflater, container, false)
         val root: View = binding.root
-
-        /*val textView: TextView = binding.textDashboard
-        dashboardViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }*/
 
         val dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
 

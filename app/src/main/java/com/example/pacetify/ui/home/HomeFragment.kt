@@ -208,8 +208,6 @@ class HomeFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        /*val homeViewModel =
-            ViewModelProvider(this).get(HomeViewModel::class.java)*/
         mainActivity = requireActivity() as MainActivity
         powerManager = mainActivity.getSystemService(Context.POWER_SERVICE) as PowerManager
 
@@ -224,10 +222,6 @@ class HomeFragment : Fragment() {
             }
         }
 
-        /*val textView: TextView = binding.tvInfo
-        homeViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = /*it*/ getString(R.string.home_text_default)
-        }*/
         binding.tvInfo.text = getString(R.string.home_text_default)
 
         binding.btnSkipSong.isEnabled = mainActivity.serviceBoundFlow.value
