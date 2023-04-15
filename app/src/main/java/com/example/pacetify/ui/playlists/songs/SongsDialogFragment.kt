@@ -66,6 +66,7 @@ class SongsDialogFragment(
         val dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
         songs = mutableListOf()
 
+        binding.tvPlaylistName.text = playlistName
         binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
         class SongAdapterDataObserver: RecyclerView.AdapterDataObserver() {
             override fun onChanged() {
