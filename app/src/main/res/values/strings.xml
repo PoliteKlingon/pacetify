@@ -14,5 +14,6 @@
     <string name="activity_background_disabled_warning">Pacetify will not measure your cadence properly without background activity enabled.
         Please enable it (Apps -> Pacetify -> Battery usage -> Allow background activity) and restart Pacetify.</string>
     <string name="no_playlists">No playlists yet</string>
+    <string name="few_playlists">Adding more playlists will result in better experience</string>
     <string name="no_songs">No songs yet</string>
 </resources>

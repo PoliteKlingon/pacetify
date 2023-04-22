@@ -1,6 +1,7 @@
 package com.example.pacetify.ui.playlists
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,6 +35,14 @@ class PlaylistsFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var playlists: MutableList<Playlist>
 
+    private fun setPlaylistsWarning() {
+        Log.d("ASD", playlists.map { playlist: Playlist -> playlist.name }.toString())
+        binding.tvPlaylistsWarning.text =
+            if (playlists.isEmpty()) getString(R.string.no_playlists)
+            else if (playlists.size < 7) getString(R.string.few_playlists)
+            else ""
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -49,21 +58,31 @@ class PlaylistsFragment : Fragment() {
 
         playlists = mutableListOf()
 
-        // this is a textView in which we display the info about no playlists being present, but
-        // as soon as at least a single playlist is present, we leave it blank. Hence the observer.
-        binding.tvNoPlaylists.text = if (playlists.isEmpty()) getString(R.string.no_playlists) else ""
-
+        // the tvPlaylistWarning is a textView in which I display the info about no (or few)
+        // playlists being present, but I need it to react to changes. Hence the observer.
+        setPlaylistsWarning()
         class PlaylistAdapterDataObserver: AdapterDataObserver() {
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                super.onItemRangeRemoved(positionStart, itemCount)
+                setPlaylistsWarning()
+            }
+
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                super.onItemRangeInserted(positionStart, itemCount)
+                setPlaylistsWarning()
+            }
+
             override fun onChanged() {
-                binding.tvNoPlaylists.text = if (playlists.isEmpty()) getString(R.string.no_playlists) else ""
+                super.onChanged()
+                setPlaylistsWarning()
             }
         }
 
         // the adapter for the playlists recyclerView
         val adapter = PlaylistAdapter(playlists, dao, lifecycleScope, activity as MainActivity,
             childFragmentManager)
-        binding.rvPlaylists.adapter = adapter
         adapter.registerAdapterDataObserver(PlaylistAdapterDataObserver())
+        binding.rvPlaylists.adapter = adapter
         binding.rvPlaylists.layoutManager = LinearLayoutManager(activity)
 
         lifecycleScope.launch {
@@ -78,7 +97,6 @@ class PlaylistsFragment : Fragment() {
             ).apply {
                 setOnDismissListener{
                     insertedPlaylist(adapter)
-                    binding.tvNoPlaylists.text = ""
                 }
                 show()
             }

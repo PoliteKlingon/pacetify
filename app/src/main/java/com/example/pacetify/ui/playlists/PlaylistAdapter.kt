@@ -1,5 +1,6 @@
 package com.example.pacetify.ui.playlists
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
@@ -70,7 +71,8 @@ class PlaylistAdapter(
                     }
                     .setPositiveButton("Delete")  { dialog, _ ->
                         playlists.remove(currentPlaylist)
-                        this@PlaylistAdapter.notifyItemRemoved(position)
+                        Log.d("ASD", "deleting playlist ${currentPlaylist.name}")
+                        this@PlaylistAdapter.notifyDataSetChanged()
                         lifecycleScope.launch {
                             dao.deletePlaylist(currentPlaylist.name)
                         }

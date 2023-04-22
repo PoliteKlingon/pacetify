@@ -57,7 +57,7 @@ class SongAdapter(
                     }
                     .setPositiveButton("Delete")  { dialog, _ ->
                         songs.remove(currentSong)
-                        this@SongAdapter.notifyItemRemoved(position)
+                        this@SongAdapter.notifyDataSetChanged()
                         lifecycleScope.launch {
                             dao.deleteSong(currentSong)
                         }
