@@ -6,6 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".ui.settings.SettingsFragment">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="?attr/background"
+        android:scaleType="fitXY"
+        />
+
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/swMotivate"
         android:layout_width="match_parent"
@@ -158,6 +165,14 @@
             android:text="Air"
             android:padding="4dp" />
     </RadioGroup>
+
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/swBackground"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Background"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@+id/rgTheme"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

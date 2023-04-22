@@ -6,6 +6,13 @@
     android:layout_height="match_parent"
     tools:context=".ui.playlists.PlaylistsFragment">
 
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="?attr/background"
+        android:scaleType="fitXY"
+        />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

@@ -107,6 +107,12 @@ class SettingsFragment : Fragment() {
             mainActivity.notifyServiceSettings()
         }
 
+        binding.swBackground.isChecked = settingsFile.addBackground
+        binding.swBackground.setOnClickListener {
+            settingsFile.addBackground = binding.swBackground.isChecked
+            mainActivity.recreate()
+        }
+
         return root
     }
 }

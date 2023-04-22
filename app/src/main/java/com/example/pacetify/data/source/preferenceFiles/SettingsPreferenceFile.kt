@@ -55,13 +55,30 @@ class SettingsPreferenceFile(
             prefEditor.apply()
         }
 
+    var addBackground: Boolean
+        get() = sharedPref.getBoolean("addBg", false)
+        set(value) {
+            prefEditor.putBoolean("addBg", value)
+            prefEditor.apply()
+        }
+
     var themeResource: Int
-        get() = when (theme) {
-            Theme.DEFAULT -> R.style.Theme_Pacetify_Default
-            Theme.FIRE -> R.style.Theme_Pacetify_Fire
-            Theme.WATER -> R.style.Theme_Pacetify_Water
-            Theme.EARTH -> R.style.Theme_Pacetify_Earth
-            Theme.AIR -> R.style.Theme_Pacetify_Air
+        get() = if (addBackground) {
+            when (theme) {
+                Theme.DEFAULT -> R.style.Theme_Pacetify_Default
+                Theme.FIRE -> R.style.Theme_Pacetify_Fire
+                Theme.WATER -> R.style.Theme_Pacetify_Water
+                Theme.EARTH -> R.style.Theme_Pacetify_Earth
+                Theme.AIR -> R.style.Theme_Pacetify_Air
+            }
+        } else {
+            when (theme) {
+                Theme.DEFAULT -> R.style.Theme_Pacetify_Default_NoBg
+                Theme.FIRE -> R.style.Theme_Pacetify_Fire_NoBg
+                Theme.WATER -> R.style.Theme_Pacetify_Water_NoBg
+                Theme.EARTH -> R.style.Theme_Pacetify_Earth_NoBg
+                Theme.AIR -> R.style.Theme_Pacetify_Air_NoBg
+            }
         }
         private set(_){}
 }
