@@ -49,8 +49,8 @@ class PlaylistAdapter(
 
             cbEnable.isChecked = currentPlaylist.enabled
 
-            // We do not use setOnCheckedChangeListener because the recycler list might change it
-            // while loading, we want this to happen only when it is clicked explicitly
+            // I do not use setOnCheckedChangeListener because the recycler list might change it
+            // while loading, I want this to happen only when it is clicked explicitly
             cbEnable.setOnClickListener {
                 val isChecked = cbEnable.isChecked
                 playlists[position].enabled = isChecked

@@ -48,7 +48,7 @@ class PlaylistsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // we need the activity reference so we can communicate with the service through it
+        // I need the activity reference so I can communicate with the service through it
         val mainActivity = requireActivity() as MainActivity
 
         _binding = FragmentPlaylistsBinding.inflate(inflater, container, false)

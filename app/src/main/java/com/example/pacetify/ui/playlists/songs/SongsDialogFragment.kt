@@ -92,7 +92,7 @@ class SongsDialogFragment(
                 setOnDismissListener{
                     lifecycleScope.launch {
                         delay(1000) // Wait for the song to load
-                        // We do not know where is the new song in the list, so we have to reload it
+                        // I do not know where is the new song in the list, so I have to reload it
                         songs.removeAll { true }
                         songs.addAll(dao.getSongsFromPlaylist(playlistName))
                         adapter.notifyDataSetChanged()
@@ -106,12 +106,12 @@ class SongsDialogFragment(
         }
 
         // Enabling playing the songs on tap:
-        // First we stop the service clock ticking so we can play individual songs
+        // First I stop the service clock ticking so I can play individual songs
         if (!mainActivity.serviceBoundFlow.value) {
-            // If the service is not running, we want to start it to be able to use it
-            mainActivity.startService(tick = false) //we do not want the service to start the clock
+            // If the service is not running, I want to start it to be able to use it
+            mainActivity.startService(tick = false) //I do not want the service to start the clock
             mainActivity.bindService()
-            // Remember that we started the service here
+            // Remember that I started the service here
             serviceManuallyStarted = true
         } else {
             mainActivity.pacetifyService?.stopTicking()
@@ -134,7 +134,7 @@ class SongsDialogFragment(
 
     override fun onResume() {
         super.onResume()
-        // we need to reset the window attributes for the window to be displayed correctly
+        // I need to reset the window attributes for the window to be displayed correctly
         val windowAttributes = dialog?.window?.attributes?.apply {
             width = WindowManager.LayoutParams.MATCH_PARENT
             height = WindowManager.LayoutParams.MATCH_PARENT
@@ -144,7 +144,7 @@ class SongsDialogFragment(
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        // We could have added or deleted a song, so we update the list for it to have correct
+        // I could have added or deleted a song, so I update the list for it to have correct
         // song counts
         playlistAdapter.notifyItemChanged(position)
     }

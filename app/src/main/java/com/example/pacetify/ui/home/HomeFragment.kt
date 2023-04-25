@@ -175,8 +175,8 @@ class HomeFragment : Fragment() {
                 }
             } catch (_: java.lang.NullPointerException) {
                 // There is a possibility that during this coroutine the user went away and some
-                // of the references became null. In that case, we do not wish to update the text
-                // anyways, so we just catch the exception and proceed.
+                // of the references became null. In that case, I do not wish to update the text
+                // anyways, so I just catch the exception and proceed.
             }
         }
     }
@@ -257,7 +257,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun requestActivityPermission() {
-        // Here we need to obtain the permission to read the user's activity
+        // Here I need to obtain the permission to read the user's activity
         val requestPermission = registerForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { isGranted ->
@@ -278,6 +278,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun requestBackgroundPermission() {
+        // The same for another permission
         if (!powerManager.isIgnoringBatteryOptimizations(mainActivity.packageName)) {
             AlertDialog.Builder(mainActivity)
                 .setTitle("Please allow background activity for Pacetify")

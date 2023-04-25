@@ -25,7 +25,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     var pacetifyService: PacetifyService? = null
-    // This is a flow in which we will store whether the service is bound
+    // This is a flow in which I will store whether the service is bound
     lateinit var serviceBoundFlow: MutableStateFlow<Boolean>
 
     lateinit var webApi: WebApi

@@ -37,7 +37,7 @@ import kotlin.random.Random
 class PacetifyService : Service(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
-    // We need the audio manager for the fake crossfade
+    // I need the audio manager for the fake crossfade
     private lateinit var audioManager: AudioManager
 
     private var isCrossfadeEnabled = false
@@ -140,7 +140,7 @@ class PacetifyService : Service(), SensorEventListener {
         Log.d("service", "Pacetify service started")
 
         shouldStartPlaying = intent?.getBooleanExtra("tick", true) ?: true
-        // We want the service to be foreground (and create a notification) only when it has been
+        // I want the service to be foreground (and create a notification) only when it has been
         // started to run for a long time, not when it has been started to play individual songs
         // is the Songs dialogFragment - in that case, it will be temporary
         if (shouldStartPlaying) makeServiceForeground()
@@ -183,7 +183,7 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     private fun makeServiceForeground() {
-        // We have to do this so Android Oreo and higher does not kill the service.
+        // I have to do this so Android Oreo and higher does not kill the service.
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Create the NotificationChannel
@@ -267,8 +267,8 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     fun onSpotifyAppRemoteConnected() {
-        // When we start the service only to play individual songs in the Song dialogFragment,
-        // we do not wish to execute any of this
+        // When I start the service only to play individual songs in the Song dialogFragment,
+        // I do not wish to execute any of this
         if (!shouldStartPlaying) return
 
         //send the current song info into its flow - subscribe to the player state
@@ -280,7 +280,7 @@ class PacetifyService : Service(), SensorEventListener {
                 timeToSongEnd = (track.duration - event.playbackPosition) / 1000
             }
 
-        // If the user does not have crossfade enabled, we advice them to do so
+        // If the user does not have crossfade enabled, I advice them to do so
         mSpotifyAppRemote?.playerApi?.crossfadeState?.setResultCallback { ev ->
             if (ev.isEnabled)
                 isCrossfadeEnabled = true
@@ -372,7 +372,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         updateNotification()
 
-        // We are running, so we remember the current bpm
+        // User is running, so I remember the current bpm
         if (currentSong != null && currentSong!!.bpm > RUNNING_THRESHOLD) lastRunningBpm = currentSong!!.bpm
 
         timePlayedFromSong++
@@ -380,8 +380,8 @@ class PacetifyService : Service(), SensorEventListener {
         if (currentlyResting) currentRestingTime--
 
         // here come all the reasons why should a song be skipped
-        // we always deal with it in some specific manner, but it always leads to selecting a new
-        // song and we only want that to happen once, therefore it is an "else if" scenario
+        // I always deal with it in some specific manner, but it always leads to selecting a new
+        // song and I only want that to happen once, therefore it is an "else if" scenario
 
         if (rest && !isRunning() && !currentlyResting && !wasResting) onStoppedRunning()
 
@@ -394,7 +394,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         else if (timeToSongEnd <= 10) {
             // Here we are at the end of the song, so if the user has crossfade enabled in their app,
-            // we simply queue the next song and let Spotify handle the crossfade. Otherwise, we do
+            // I simply queue the next song and let Spotify handle the crossfade. Otherwise, I do
             // our fake crossfade.
             if (isCrossfadeEnabled) findNextSong(queue = true)
             else skipSong()
@@ -500,15 +500,15 @@ class PacetifyService : Service(), SensorEventListener {
         mSpotifyAppRemote?.playerApi?.pause()
     }
 
-    // We fake the crossfade skip by lowering the volume, skipping, and then turning it up again.
+    // I fake the crossfade skip by lowering the volume, skipping, and then turning it up again.
     private fun crossfadeSkip() {
         // using the crossfadeSkipMutex ensures that there are no concurrent crossfades
         // - that would cause unwanted behaviour
-        // if we are already skipping, we do not wish to attempt to skip again
+        // if I am already skipping, I do not wish to attempt to skip again
         if (crossfadeMutex.isLocked) return
 
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-            // locking means that we are currently skipping
+            // locking means that I am currently skipping
             crossfadeMutex.lock()
 
             val originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
@@ -521,7 +521,7 @@ class PacetifyService : Service(), SensorEventListener {
                 audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
                     ((i / 10f) * originalVolume).toInt(),
-                    0 //AudioManager.FLAG_SHOW_UI
+                    0
                 )
                 delay(crossfadeStepMs)
                 i--
@@ -542,7 +542,7 @@ class PacetifyService : Service(), SensorEventListener {
                 delay(crossfadeStepMs)
                 i++
             }
-            // we have finished the skipping
+            // I have finished the skipping
             crossfadeMutex.unlock()
         }
     }

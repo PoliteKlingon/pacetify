@@ -53,8 +53,8 @@ class WebApi(val activity: MainActivity) {
 
     private var ongoingRequestsCount = 0
 
-    // As soon as the user connects to the internet, we want to connect to the Api, but no sooner.
-    // We also wish to disconnect when the internet becomes unavailable.
+    // As soon as the user connects to the internet, I want to connect to the API, but not sooner.
+    // I also wish to disconnect when the internet becomes unavailable.
     private var connectivityManager: ConnectivityManager =
         activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private var networkCallback = object : ConnectivityManager.NetworkCallback() {
@@ -106,7 +106,7 @@ class WebApi(val activity: MainActivity) {
         val request: AuthorizationRequest =
             AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI)
                 .setShowDialog(false)
-                .setScopes(arrayOf("app-remote-control")) //we will need to control the Spotify app
+                .setScopes(arrayOf("app-remote-control")) //I will need to control the Spotify app
                 .setCampaign("") //no campaign needed
                 .build()
 
@@ -157,7 +157,7 @@ class WebApi(val activity: MainActivity) {
                     var currentItems = 0
                     while (currentItems < totalItems) {
                         // As the web API does support getting at most 50 results at a time,
-                        // we have to split the query
+                        // I have to split the query
                         addLimitedSongsFromPlaylist(playlist, currentItems, 50, lifecycleScope, isAlbum)
                         currentItems += 50
                     }
@@ -297,7 +297,7 @@ class WebApi(val activity: MainActivity) {
                     }
                 } catch (e: JSONException) {
                     Log.d("WebAPI","Failed to parse data: $e")
-                    //we do not add songs with unknown bpm
+                    //I do not add songs with unknown bpm
                 }
                 ongoingRequestsCount--
             }

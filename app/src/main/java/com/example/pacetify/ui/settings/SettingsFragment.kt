@@ -46,7 +46,7 @@ class SettingsFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        // we need this activity reference to be able to communicate with the service through it
+        // I need this activity reference to be able to communicate with the service through it
         val mainActivity = requireActivity() as MainActivity
         val settingsFile = SettingsPreferenceFile.getInstance(mainActivity)
 
