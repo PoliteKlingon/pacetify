@@ -80,8 +80,12 @@ class PacetifyService : Service(), SensorEventListener {
     private var rest = false
     private var restTime = 20
 
-    private val MOTIVATE_ADDITION = 3 // bpm to add if user wants to be motivated
     private val RUNNING_THRESHOLD = 120 // lowest bpm that is considered to be running
+    private val WALKING_THRESHOLD = 70 // lowest bpm that is considered to be walking
+    private var runningThreshold = RUNNING_THRESHOLD // lowest non-resting bpm for current mode
+
+
+    private val MOTIVATE_ADDITION = 3 // bpm to add if user wants to be motivated
     private val SONG_MINIMAL_SECONDS = 15 // lowest amount of seconds to be played from a song before skipping
     private val INITIAL_CADENCE = 150 // the bpm of the first played song  //TODO into settings?
     private val FAKE_CROSSFADE_DURATION_MS: Long = 1000 // duration of fake volume crossfade in ms
@@ -373,7 +377,7 @@ class PacetifyService : Service(), SensorEventListener {
         updateNotification()
 
         // User is running, so I remember the current bpm
-        if (currentSong != null && currentSong!!.bpm > RUNNING_THRESHOLD) lastRunningBpm = currentSong!!.bpm
+        if (currentSong != null && currentSong!!.bpm > runningThreshold) lastRunningBpm = currentSong!!.bpm
 
         timePlayedFromSong++
         timeToSongEnd--
@@ -387,7 +391,7 @@ class PacetifyService : Service(), SensorEventListener {
 
         else if (isRunning() && currentlyResting) onStartedRunning()
 
-        else if (isRunning() && currentCadence > RUNNING_THRESHOLD
+        else if (isRunning() && currentCadence > runningThreshold
             && timePlayedFromSong > SONG_MINIMAL_SECONDS
             && currentSong != null && (abs(cadence - currentSong!!.bpm) > 4)) //TODO tweak this according to test
             skipSong()
@@ -422,7 +426,7 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     private fun isRunning(): Boolean {
-        return cadence > RUNNING_THRESHOLD
+        return cadence > runningThreshold
     }
 
     private fun onStartedRunning() {
@@ -444,7 +448,7 @@ class PacetifyService : Service(), SensorEventListener {
             if (rest && currentRestingTime > 0){
                 // return random resting bpm, but not too low - then it would have a tendency to
                 // always choose the slowest song available
-                Random.nextInt(RUNNING_THRESHOLD - 30, RUNNING_THRESHOLD)
+                Random.nextInt(runningThreshold - 30, runningThreshold)
             } else lastRunningBpm
         } else {
             cadence + if (motivate) MOTIVATE_ADDITION else 0
@@ -563,6 +567,7 @@ class PacetifyService : Service(), SensorEventListener {
             rest = settingsFile!!.rest
             restTime = settingsFile!!.restTime
             currentRestingTime = if (rest) restTime else 0
+            runningThreshold = if (settingsFile!!.walkingMode) WALKING_THRESHOLD else RUNNING_THRESHOLD
         }
     }
 

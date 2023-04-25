@@ -7,35 +7,77 @@
     tools:context=".ui.settings.SettingsFragment">
 
     <ImageView
+        android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="?attr/background"
         android:scaleType="fitXY"
-        />
+        android:src="?attr/background" />
+
+    <TextView
+        android:id="@+id/tvMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginVertical="16dp"
+        android:text="Mode:"
+        android:textColor="?attr/customColorValue"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toStartOf="@+id/btnRun"
+        app:layout_constraintHorizontal_bias="0.75"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/btnRun"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginVertical="8dp"
+        android:backgroundTint="?attr/colorSecondary"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="8dp"
+        android:text="Run"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toStartOf="@+id/btnWalk"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/btnWalk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginVertical="8dp"
+        android:backgroundTint="?attr/colorSecondary"
+        android:paddingHorizontal="32dp"
+        android:paddingVertical="8dp"
+        android:text="Walk"
+        android:textSize="20sp"
+        app:layout_constraintStart_toEndOf="@+id/btnRun"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/swMotivate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:text="Motivate me \n"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/btnRun" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="Always mix a slightly faster song"
         android:textSize="15sp"
         android:translationY="-25dp"
-        android:text="Always mix a slightly faster song"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/swMotivate" />
@@ -57,12 +99,12 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="Play slow music when resting"
         android:textSize="15sp"
         android:translationY="-25dp"
-        android:text="Play slow music when resting"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/swRest" />
@@ -71,13 +113,13 @@
         android:id="@+id/tvRest"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="8dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
-        android:textSize="18sp"
+        android:layout_marginBottom="8dp"
         android:text="Maximal resting time: __ s"
         android:textAlignment="center"
+        android:textSize="18sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/swRest" />
@@ -87,8 +129,8 @@
         style="@style/Widget.AppCompat.SeekBar.Discrete"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:max="18"
         android:progress="1"
@@ -98,27 +140,26 @@
 
     <View
         android:id="@+id/line"
-        app:layout_constraintTop_toBottomOf="@+id/sbRest"
-        android:layout_marginTop="32dp"
-        android:layout_marginHorizontal="8dp"
         android:layout_width="match_parent"
         android:layout_height="2dp"
-        android:background="#c0c0c0"/>
+        android:layout_marginHorizontal="8dp"
+        android:layout_marginTop="32dp"
+        android:background="#c0c0c0"
+        app:layout_constraintTop_toBottomOf="@+id/sbRest" />
 
     <TextView
         android:id="@+id/tvTheme"
-        android:layout_height="wrap_content"
         android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
-        android:textSize="20sp"
         android:text="Theme"
         android:textColor="?attr/customColorValue"
-        app:layout_constraintTop_toBottomOf="@id/line"
-        app:layout_constraintStart_toStartOf="parent"
+        android:textSize="20sp"
         app:layout_constraintStart_toEndOf="parent"
-        />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/line" />
 
     <RadioGroup
         android:id="@+id/rgTheme"
@@ -135,51 +176,51 @@
             android:id="@+id/rbDefault"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="4dp"
             android:text="Default"
-            android:textSize="16sp"
-            android:padding="4dp" />
+            android:textSize="16sp" />
 
         <RadioButton
             android:id="@+id/rbFire"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="4dp"
             android:text="Fire"
-            android:textSize="16sp"
-            android:padding="4dp" />
+            android:textSize="16sp" />
 
         <RadioButton
             android:id="@+id/rbWater"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="4dp"
             android:text="Water"
-            android:textSize="16sp"
-            android:padding="4dp" />
+            android:textSize="16sp" />
 
         <RadioButton
             android:id="@+id/rbEarth"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="4dp"
             android:text="Earth"
-            android:textSize="16sp"
-            android:padding="4dp" />
+            android:textSize="16sp" />
 
         <RadioButton
             android:id="@+id/rbAir"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:padding="4dp"
             android:text="Air"
-            android:textSize="16sp"
-            android:padding="4dp" />
+            android:textSize="16sp" />
     </RadioGroup>
 
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/swBackground"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
         android:text="Background"
         android:textSize="20sp"
-        android:layout_margin="16dp"
-        app:layout_constraintTop_toBottomOf="@+id/rgTheme"/>
+        app:layout_constraintTop_toBottomOf="@+id/rgTheme" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

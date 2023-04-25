@@ -27,6 +27,13 @@ class SettingsPreferenceFile(
     private val sharedPref = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
     private val prefEditor = sharedPref.edit()
 
+    var walkingMode: Boolean
+        get() = sharedPref.getBoolean("walkingMode", false)
+        set(walkingMode) {
+            prefEditor.putBoolean("walkingMode", walkingMode)
+            prefEditor.apply()
+        }
+
     var motivate: Boolean
         get() = sharedPref.getBoolean("motivate", true)
         set(motivate) {

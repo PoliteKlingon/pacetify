@@ -40,7 +40,7 @@ class SongAdapter(
         val currentSong = songs[position]
         holder.binding.apply {
             tvSongName.text = currentSong.name
-            tvArtistName.text = "${currentSong.artistName} (bpm: ${currentSong.bpm})"
+            tvArtistName.text = "${currentSong.artistName} (${currentSong.bpm} BPM)"
             // The icon should be play if the song is not playing and pause if it is
             if (currentSong == parentDialogFragment.currentlyPlayingSong)
                 icPlayPause.setImageResource(R.drawable.baseline_pause_24)

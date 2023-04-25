@@ -44,7 +44,7 @@ class PlaylistAdapter(
             tvPlaylistName.text = currentPlaylist.name
             lifecycleScope.launch  {
                 val songNum = dao.getSongsNumInPlaylist(currentPlaylist.name)
-                tvPlaylistSongs.text = if (songNum == 0) "Empty or invalid playlist" else "$songNum songs imported (tap to manage)"
+                tvPlaylistSongs.text = if (songNum == 0) "Empty or invalid playlist" else "$songNum tracks (tap to manage)"
             }
 
             cbEnable.isChecked = currentPlaylist.enabled

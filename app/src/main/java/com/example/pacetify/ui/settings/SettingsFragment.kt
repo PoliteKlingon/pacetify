@@ -1,16 +1,24 @@
 package com.example.pacetify.ui.settings
 
+import android.graphics.BlendMode
+import android.graphics.BlendModeColorFilter
+import android.graphics.ColorFilter
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
+import android.widget.TextView
+import androidx.core.graphics.BlendModeColorFilterCompat
+import androidx.core.graphics.BlendModeCompat
+import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.pacetify.MainActivity
+import com.example.pacetify.R
 import com.example.pacetify.data.source.preferenceFiles.SettingsPreferenceFile
 import com.example.pacetify.data.source.preferenceFiles.Theme
 import com.example.pacetify.databinding.FragmentSettingsBinding
@@ -41,6 +49,13 @@ class SettingsFragment : Fragment() {
     private fun sliderProgressToTime(progress: Int): Int { return (progress + 1) * 10 }
     private fun timeToSliderProgress(time: Int): Int { return (time / 10) - 1 }
 
+    private fun modeButtonSelect(toSelect: TextView, toDeselect: TextView) {
+        toDeselect.setTextColor(binding.btnWalk.hintTextColors.defaultColor)
+        toDeselect.setBackgroundResource(R.drawable.blank_outline)
+        toSelect.setTextColor(binding.btnRun.linkTextColors)
+        toSelect.setBackgroundResource(R.drawable.radius_outline)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -53,28 +68,6 @@ class SettingsFragment : Fragment() {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        val theme = SettingsPreferenceFile.getInstance(mainActivity).theme
-        binding.rgTheme.check(
-            when (theme) {
-                Theme.DEFAULT -> binding.rbDefault.id
-                Theme.FIRE    -> binding.rbFire.id 
-                Theme.WATER   -> binding.rbWater.id
-                Theme.EARTH   -> binding.rbEarth.id
-                Theme.AIR     -> binding.rbAir.id
-            }
-        )
-        binding.rgTheme.setOnCheckedChangeListener { _, checkedId ->
-            SettingsPreferenceFile.getInstance(mainActivity).theme = when (checkedId) {
-                binding.rbDefault.id -> Theme.DEFAULT
-                binding.rbFire.id    -> Theme.FIRE
-                binding.rbWater.id   -> Theme.WATER
-                binding.rbEarth.id   -> Theme.EARTH
-                binding.rbAir.id     -> Theme.AIR
-                else -> Theme.DEFAULT
-            }
-            mainActivity.recreate()
-        }
-
         binding.swMotivate.isChecked = settingsFile.motivate
         binding.swRest.isChecked = settingsFile.rest
         binding.sbRest.progress = timeToSliderProgress(settingsFile.restTime)
@@ -82,6 +75,20 @@ class SettingsFragment : Fragment() {
         binding.sbRest.isEnabled = binding.swRest.isChecked
         binding.tvRest.text = "Maximal resting time: ${settingsFile.restTime} s"
 
+        if (settingsFile.walkingMode) modeButtonSelect(binding.btnWalk, binding.btnRun)
+        else modeButtonSelect(binding.btnRun, binding.btnWalk)
+
+        binding.btnRun.setOnClickListener {
+            modeButtonSelect(binding.btnRun, binding.btnWalk)
+            settingsFile.walkingMode = false
+            mainActivity.notifyServiceSettings()
+        }
+
+        binding.btnWalk.setOnClickListener {
+            modeButtonSelect(binding.btnWalk, binding.btnRun)
+            settingsFile.walkingMode = true
+            mainActivity.notifyServiceSettings()
+        }
 
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -105,6 +112,28 @@ class SettingsFragment : Fragment() {
             settingsFile.rest = binding.swRest.isChecked
             binding.sbRest.isEnabled = binding.swRest.isChecked
             mainActivity.notifyServiceSettings()
+        }
+
+        val theme = SettingsPreferenceFile.getInstance(mainActivity).theme
+        binding.rgTheme.check(
+            when (theme) {
+                Theme.DEFAULT -> binding.rbDefault.id
+                Theme.FIRE    -> binding.rbFire.id
+                Theme.WATER   -> binding.rbWater.id
+                Theme.EARTH   -> binding.rbEarth.id
+                Theme.AIR     -> binding.rbAir.id
+            }
+        )
+        binding.rgTheme.setOnCheckedChangeListener { _, checkedId ->
+            SettingsPreferenceFile.getInstance(mainActivity).theme = when (checkedId) {
+                binding.rbDefault.id -> Theme.DEFAULT
+                binding.rbFire.id    -> Theme.FIRE
+                binding.rbWater.id   -> Theme.WATER
+                binding.rbEarth.id   -> Theme.EARTH
+                binding.rbAir.id     -> Theme.AIR
+                else -> Theme.DEFAULT
+            }
+            mainActivity.recreate()
         }
 
         binding.swBackground.isChecked = settingsFile.addBackground
