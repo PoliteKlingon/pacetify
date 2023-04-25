@@ -152,26 +152,36 @@ class HomeFragment : Fragment() {
         cancelFlowObserving()
     }
 
+    private fun enableOnOffButton() {
+        binding.btnOnOff.isEnabled = true
+        binding.btnOnOff.alpha = 1f
+    }
+
+    private fun disableOnOffButton() {
+        binding.btnOnOff.isEnabled = false
+        binding.btnOnOff.alpha = 0.3f
+    }
+
     private fun setDisconnectedUiState() {
         lifecycleScope.launch {
             try {
                 if (!bgActivityAllowed) {
                     binding.tvCadence.text = getString(R.string.activity_background_disabled_warning)
-                    binding.btnOnOff.isEnabled = false
+                    disableOnOffButton()
                 } else if (!activityTrackingAllowed) {
                     binding.tvCadence.text = getString(R.string.activity_recognition_disabled_warning)
-                    binding.btnOnOff.isEnabled = false
+                    disableOnOffButton()
                 } else if (dao.numOfPlaylists() == 0) {
                     binding.tvCadence.text = getString(R.string.home_no_playlists)
-                    binding.btnOnOff.isEnabled = false
+                    disableOnOffButton()
                 } else if (dao.numEnabledSongsDistinct() == 0) {
                     binding.tvCadence.text = getString(R.string.home_no_enabled_playlists)
-                    binding.btnOnOff.isEnabled = false
+                    disableOnOffButton()
                 } else if (!mainActivity.serviceBoundFlow.value) {
                     binding.tvCadence.text = getString(R.string.service_off_description)
-                    binding.btnOnOff.isEnabled = true
+                    enableOnOffButton()
                 } else {
-                    binding.btnOnOff.isEnabled = true
+                    enableOnOffButton()
                 }
             } catch (_: java.lang.NullPointerException) {
                 // There is a possibility that during this coroutine the user went away and some
