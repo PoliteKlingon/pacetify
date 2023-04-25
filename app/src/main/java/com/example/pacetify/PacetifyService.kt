@@ -413,8 +413,8 @@ class PacetifyService : Service(), SensorEventListener {
 
     private fun updateInfoFlow() {
         infoFlow.value =
-            /*"currentBpm: ${currentSong?.bpm}\n" +
-                    "wasResting: $wasResting\n" +
+            "Current song's BPM: ${currentSong?.bpm}\n" +
+                    /*"wasResting: $wasResting\n" +
                     "lastRunningBpm: $lastRunningBpm\n" +
                     "timePlayedFromSong: $timePlayedFromSong\n" +
                     "timeToSongEnd: $timeToSongEnd\n\n" +*/
