@@ -35,6 +35,8 @@ import java.util.concurrent.CancellationException
  * The main fragment of the app - here the user can start the service and then their cadence,
  * currently played song and other running info like resting time left is displayed. The user
  * can also skip a song.
+ *
+ * author: Jiří Loun
  */
 class HomeFragment : Fragment() {
 

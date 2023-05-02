@@ -3,6 +3,10 @@ package com.example.pacetify.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+/**
+ * author: Jiří Loun
+ */
+
 @Entity
 data class Playlist(
     val id: String,

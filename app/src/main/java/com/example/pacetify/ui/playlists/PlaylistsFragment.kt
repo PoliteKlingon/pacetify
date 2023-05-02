@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
 /**
  * In this fragment the user manages (display, add, delete) their imported playlists and songs
  * that are then played while running.
+ *
+ * author: Jiří Loun
  */
 class PlaylistsFragment : Fragment() {
 

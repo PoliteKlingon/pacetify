@@ -6,6 +6,8 @@ import com.example.pacetify.R
 /**
  * This is a singleton class for the settings preference file manipulation.
  * The file stores the settings entered by the user - motivate, rest and restTime.
+ *
+ * author: Jiří Loun
  */
 class SettingsPreferenceFile(
     context: Context

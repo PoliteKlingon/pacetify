@@ -2,6 +2,11 @@ package com.example.pacetify.util
 
 import android.webkit.URLUtil
 
+/**
+ * Util class for URI manipulation
+ *
+ * author: Jiří Loun
+ */
 class UriUtils {
     companion object Functions {
         fun isValidSpotifyPlaylistUri(uri: String) : Boolean {

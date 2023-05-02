@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 /**
  * The adapter for every song in the songs recyclerView. It shows the song information,
  * and it can be deleted or played by clicking on it.
+ *
+ * author: Jiří Loun
  */
 class SongAdapter(
     private var songs: MutableList<Song>,

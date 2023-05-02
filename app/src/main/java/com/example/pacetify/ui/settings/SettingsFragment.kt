@@ -30,6 +30,8 @@ import kotlinx.coroutines.launch
  * the rest is enabled, they can adjust the maximal resting time before an upbeat song is played
  * again. Here the user can also choose the color theme for Pacetify.
  * The settings are store in SettingPreferenceFile.
+ *
+ * author: Jiří Loun
  */
 class SettingsFragment : Fragment() {
 

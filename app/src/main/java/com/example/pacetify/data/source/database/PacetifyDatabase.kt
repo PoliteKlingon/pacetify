@@ -7,6 +7,12 @@ import androidx.room.RoomDatabase
 import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.Song
 
+/**
+ * The Pacetify database - singleton class
+ *
+ * author: Jiří Loun
+ */
+
 @Database(entities = [Playlist::class, Song::class], version = 1)
 abstract class PacetifyDatabase :RoomDatabase() {
     abstract val pacetifyDao: PacetifyDao

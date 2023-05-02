@@ -16,6 +16,8 @@ import com.example.pacetify.util.UriUtils
 
 /**
  * A dialog for adding a song. URL is required, checked and then the song is imported.
+ *
+ * author: Jiří Loun
  */
 class AddSongDialog(
     val mainActivity: MainActivity,

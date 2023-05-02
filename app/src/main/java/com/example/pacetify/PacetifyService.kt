@@ -33,6 +33,8 @@ import kotlin.random.Random
 /**
  * This is the service that contains the running functionality - calculates cadence and controls
  * the Spotify playback.
+ *
+ * author: Jiří Loun
  */
 class PacetifyService : Service(), SensorEventListener {
 

@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 /**
  * A dialog for adding a playlist. Name and URL are required, checked and then the playlist and
  * its songs are imported.
+ *
+ * author: Jiří Loun
  */
 class AddPlaylistDialog(
     private val mainActivity: MainActivity,

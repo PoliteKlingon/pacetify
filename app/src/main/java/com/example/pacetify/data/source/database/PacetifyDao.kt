@@ -4,6 +4,12 @@ import androidx.room.*
 import com.example.pacetify.data.Playlist
 import com.example.pacetify.data.Song
 
+/**
+ * The data access object for the Pacetify database
+ *
+ * author: Jiří Loun
+ */
+
 @Dao
 interface PacetifyDao {
     @Insert(entity = Playlist::class, onConflict = OnConflictStrategy.REPLACE)

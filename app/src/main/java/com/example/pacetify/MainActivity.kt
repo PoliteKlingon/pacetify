@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
  * The main (and the only one) activity in our application
+ *
+ * author: Jiří Loun
  */
 class MainActivity : AppCompatActivity() {
 
