@@ -89,7 +89,7 @@ class PacetifyService : Service(), SensorEventListener {
 
     private val MOTIVATE_ADDITION = 3 // bpm to add if user wants to be motivated
     private val SONG_MINIMAL_SECONDS = 15 // lowest amount of seconds to be played from a song before skipping
-    private val INITIAL_CADENCE = 150 // the bpm of the first played song  //TODO into settings?
+    private val INITIAL_CADENCE = 150 // the bpm of the first played song
     private val FAKE_CROSSFADE_DURATION_MS: Long = 1000 // duration of fake volume crossfade in ms
     private val crossfadeMutex = Mutex() // mutex for the crossfade locking
     private var lastRunningBpm = INITIAL_CADENCE // used for rest functionality
