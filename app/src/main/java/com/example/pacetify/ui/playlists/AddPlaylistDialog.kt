@@ -27,7 +27,7 @@ class AddPlaylistDialog(
     val playlists: MutableList<Playlist>,
     private val dao: PacetifyDao,
     private val adapter: PlaylistAdapter,
-    val lifecycle: Lifecycle
+    private val lifecycle: Lifecycle
 ): Dialog(mainActivity){
 
     override fun onCreate(savedInstanceState: Bundle?) {

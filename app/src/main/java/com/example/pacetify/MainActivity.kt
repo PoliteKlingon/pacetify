@@ -18,10 +18,11 @@ import com.example.pacetify.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * The main (and the only one) activity in our application
+ * The main (and the only one) activity in Pacetify
  *
  * author: Jiří Loun
  */
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding

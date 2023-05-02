@@ -36,6 +36,7 @@ import kotlin.random.Random
  *
  * author: Jiří Loun
  */
+
 class PacetifyService : Service(), SensorEventListener {
 
     private lateinit var sensorManager: SensorManager
@@ -86,7 +87,6 @@ class PacetifyService : Service(), SensorEventListener {
     private val WALKING_THRESHOLD = 70 // lowest bpm that is considered to be walking
     private var runningThreshold = RUNNING_THRESHOLD // lowest non-resting bpm for current mode
 
-
     private val MOTIVATE_ADDITION = 3 // bpm to add if user wants to be motivated
     private val SONG_MINIMAL_SECONDS = 15 // lowest amount of seconds to be played from a song before skipping
     private val INITIAL_CADENCE = 150 // the bpm of the first played song  //TODO into settings?
@@ -110,7 +110,6 @@ class PacetifyService : Service(), SensorEventListener {
 
     // this mutex is for handling the concurrency of reloading songs and picking a song
     private var songsLoadingMutex = Mutex()
-
     // this lock keeps the CPU awake even when the screen is off
     private lateinit var wakeLock: WakeLock
 
@@ -139,6 +138,7 @@ class PacetifyService : Service(), SensorEventListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // skipping from the notification
         if (intent?.action == "SKIP_SONG") {
             orderSkipSong()
             return START_REDELIVER_INTENT
@@ -151,6 +151,7 @@ class PacetifyService : Service(), SensorEventListener {
         // is the Songs dialogFragment - in that case, it will be temporary
         if (shouldStartPlaying) makeServiceForeground()
 
+        // acquire wakelock so the CPu does not fall asleep
         wakeLock =
             (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
                 newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PacetifyService::Wakelock").apply {
@@ -360,6 +361,8 @@ class PacetifyService : Service(), SensorEventListener {
 
     private var skipNextTime = false
 
+    // use this function instead of skipping directly to separate the context of calling and
+    // performing the skip
     fun orderSkipSong() {
         skipNextTime = true
     }
@@ -395,13 +398,13 @@ class PacetifyService : Service(), SensorEventListener {
 
         else if (isRunning() && currentCadence > runningThreshold
             && timePlayedFromSong > SONG_MINIMAL_SECONDS
-            && currentSong != null && (abs(cadence - currentSong!!.bpm) > 4)) //TODO tweak this according to test
+            && currentSong != null && (abs(cadence - currentSong!!.bpm) > 4))
             skipSong()
 
         else if (timeToSongEnd <= 10) {
             // Here we are at the end of the song, so if the user has crossfade enabled in their app,
             // I simply queue the next song and let Spotify handle the crossfade. Otherwise, I do
-            // our fake crossfade.
+            // the fake crossfade.
             if (isCrossfadeEnabled) findNextSong(queue = true)
             else skipSong()
         }
@@ -420,10 +423,6 @@ class PacetifyService : Service(), SensorEventListener {
     private fun updateInfoFlow() {
         infoFlow.value =
             "Current song's BPM: ${currentSong?.bpm}\n" +
-                    /*"wasResting: $wasResting\n" +
-                    "lastRunningBpm: $lastRunningBpm\n" +
-                    "timePlayedFromSong: $timePlayedFromSong\n" +
-                    "timeToSongEnd: $timeToSongEnd\n\n" +*/
                     if (currentlyResting) "Resting: $currentRestingTime s left" else ""
     }
 
@@ -457,6 +456,7 @@ class PacetifyService : Service(), SensorEventListener {
         }
     }
 
+    // provide the flows for communication
     fun getFlows(): Array<MutableStateFlow<String>> {
         return arrayOf(cadenceFlow, infoFlow, songNameFlow, songDescriptionFlow)
     }
@@ -615,7 +615,7 @@ class PacetifyService : Service(), SensorEventListener {
             stopIndex++
         }
 
-        return Random.nextInt(startIndex, stopIndex + 1) //stop is exclusive
+        return Random.nextInt(startIndex, stopIndex + 1) // stop index is exclusive
     }
 
     private fun binarySearchSongIndex(targetBpm: Int, start: Int, stop: Int): Int {

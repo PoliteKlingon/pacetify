@@ -7,6 +7,7 @@ import android.webkit.URLUtil
  *
  * author: Jiří Loun
  */
+
 class UriUtils {
     companion object Functions {
         fun isValidSpotifyPlaylistUri(uri: String) : Boolean {

@@ -5,10 +5,12 @@ import com.example.pacetify.R
 
 /**
  * This is a singleton class for the settings preference file manipulation.
- * The file stores the settings entered by the user - motivate, rest and restTime.
+ * The file stores the settings entered by the user - application mode, motivate option, rest
+ * option, restTime, theme and background addition preference.
  *
  * author: Jiří Loun
  */
+
 class SettingsPreferenceFile(
     context: Context
 ) {
@@ -71,6 +73,7 @@ class SettingsPreferenceFile(
             prefEditor.apply()
         }
 
+    // This function returns the currently selected theme as a resource
     var themeResource: Int
         get() = if (addBackground) {
             when (theme) {
@@ -89,5 +92,5 @@ class SettingsPreferenceFile(
                 Theme.AIR -> R.style.Theme_Pacetify_Air_NoBg
             }
         }
-        private set(_){}
+        private set(_){} // this property cannot be set
 }

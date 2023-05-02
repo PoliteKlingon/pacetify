@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
  *
  * author: Jiří Loun
  */
+
 class SongAdapter(
     private var songs: MutableList<Song>,
     private val dao: PacetifyDao,

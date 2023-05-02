@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
  *
  * author: Jiří Loun
  */
+
 class SongsDialogFragment(
     private val playlistAdapter: PlaylistAdapter,
     private val playlistName: String,
@@ -71,7 +72,17 @@ class SongsDialogFragment(
         binding.tvPlaylistName.text = playlistName
         binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
         class SongAdapterDataObserver: RecyclerView.AdapterDataObserver() {
-            override fun onChanged() {
+            // observe the adapter to react to changes
+            override fun onChanged() { // generic change
+                binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
+            }
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                super.onItemRangeInserted(positionStart, itemCount)
+                binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
+            }
+
+            override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
+                super.onItemRangeRemoved(positionStart, itemCount)
                 binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
             }
         }

@@ -3,9 +3,6 @@ package com.example.pacetify.ui.home
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Resources
-import android.graphics.BlendMode
-import android.graphics.BlendModeColorFilter
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -38,6 +35,7 @@ import java.util.concurrent.CancellationException
  *
  * author: Jiří Loun
  */
+
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
@@ -50,7 +48,7 @@ class HomeFragment : Fragment() {
     private var songDescriptionFlow: StateFlow<String>? = null
 
     private var cadenceFlowObserver: Job? = null
-    private var InfoFlowObserver: Job? = null
+    private var infoFlowObserver: Job? = null
     private var songNameFlowObserver: Job? = null
     private var songDescriptionFlowObserver: Job? = null
 
@@ -65,6 +63,7 @@ class HomeFragment : Fragment() {
 
     private fun onServiceConnected() {
         binding.btnOnOff.text = getString(R.string.service_on)
+        // make cadence info bigger
         binding.tvCadence.setTextSize(TypedValue.COMPLEX_UNIT_SP, 27.0F)
 
         if (mainActivity.pacetifyService == null) {
@@ -108,8 +107,8 @@ class HomeFragment : Fragment() {
             }
         }
 
-        if (InfoFlowObserver == null) {
-            InfoFlowObserver = lifecycleScope.launchWhenStarted {
+        if (infoFlowObserver == null) {
+            infoFlowObserver = lifecycleScope.launchWhenStarted {
                 infoFlow?.collectLatest {
                     binding.tvInfo.text = it
                     Log.d("HomeFragment", "info updated")
@@ -138,6 +137,7 @@ class HomeFragment : Fragment() {
 
     private fun onServiceDisconnected() {
         binding.btnOnOff.text = getString(R.string.service_off)
+        // make cadence info smaller again
         binding.tvCadence.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20.0F)
 
         setDisconnectedUiState()
@@ -164,6 +164,8 @@ class HomeFragment : Fragment() {
         binding.btnOnOff.alpha = 0.3f
     }
 
+    // this function sets the button and text (cadence text is used for info because of its good
+    // placement) for the home fragment in different circumstances
     private fun setDisconnectedUiState() {
         lifecycleScope.launch {
             try {
@@ -196,8 +198,8 @@ class HomeFragment : Fragment() {
     private fun cancelFlowObserving() {
         cadenceFlowObserver?.cancel(CancellationException())
         cadenceFlowObserver = null
-        InfoFlowObserver?.cancel(CancellationException())
-        InfoFlowObserver = null
+        infoFlowObserver?.cancel(CancellationException())
+        infoFlowObserver = null
         songNameFlowObserver?.cancel(CancellationException())
         songNameFlowObserver = null
         songDescriptionFlowObserver?.cancel(CancellationException())
@@ -211,8 +213,7 @@ class HomeFragment : Fragment() {
         _binding = null
     }
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
+    // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
 
     override fun onCreateView(
@@ -234,16 +235,13 @@ class HomeFragment : Fragment() {
             }
         }
 
-        binding.tvInfo.text = getString(R.string.home_text_default)
-
         binding.btnSkipSong.isEnabled = mainActivity.serviceBoundFlow.value
 
         binding.btnSkipSong.setOnClickListener {
             if (mainActivity.serviceBoundFlow.value) {
                 mainActivity.pacetifyService?.orderSkipSong()
-            } else {
-                Toast.makeText(requireActivity(), "Service is not active", Toast.LENGTH_SHORT).show()
-            }
+            } // the button is enabled only if the service is bound, the if here is just as
+              // a precaution
         }
 
         // service manipulation
@@ -290,7 +288,8 @@ class HomeFragment : Fragment() {
     }
 
     private fun requestBackgroundPermission() {
-        // The same for another permission
+        // The same for background permission, but this time the user has to do it manually
+        // this permission is needed because otherwise Android pauses the service once in a while
         if (!powerManager.isIgnoringBatteryOptimizations(mainActivity.packageName)) {
             AlertDialog.Builder(mainActivity)
                 .setTitle("Please allow background activity for Pacetify")

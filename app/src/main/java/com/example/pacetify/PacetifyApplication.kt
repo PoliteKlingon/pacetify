@@ -7,4 +7,5 @@ import android.app.Application
  *
  * author: Jiří Loun
  */
+
 class PacetifyApplication: Application()

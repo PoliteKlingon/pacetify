@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
  *
  * author: Jiří Loun
  */
+
 class PlaylistAdapter(
     private var playlists: MutableList<Playlist>,
     private val dao: PacetifyDao,

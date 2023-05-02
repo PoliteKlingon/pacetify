@@ -32,13 +32,11 @@ class PlaylistsFragment : Fragment() {
         _binding = null
     }
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
+    // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
     private lateinit var playlists: MutableList<Playlist>
 
     private fun setPlaylistsWarning() {
-        Log.d("ASD", playlists.map { playlist: Playlist -> playlist.name }.toString())
         binding.tvPlaylistsWarning.text =
             if (playlists.isEmpty()) getString(R.string.no_playlists)
             else if (playlists.size < 7) getString(R.string.few_playlists)
@@ -52,12 +50,10 @@ class PlaylistsFragment : Fragment() {
     ): View {
         // I need the activity reference so I can communicate with the service through it
         val mainActivity = requireActivity() as MainActivity
-
         _binding = FragmentPlaylistsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         val dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
-
         playlists = mutableListOf()
 
         // the tvPlaylistWarning is a textView in which I display the info about no (or few)
@@ -68,13 +64,11 @@ class PlaylistsFragment : Fragment() {
                 super.onItemRangeRemoved(positionStart, itemCount)
                 setPlaylistsWarning()
             }
-
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 super.onItemRangeInserted(positionStart, itemCount)
                 setPlaylistsWarning()
             }
-
-            override fun onChanged() {
+            override fun onChanged() { // generic change
                 super.onChanged()
                 setPlaylistsWarning()
             }
@@ -112,10 +106,10 @@ class PlaylistsFragment : Fragment() {
     private fun insertedPlaylist(adapter: PlaylistAdapter) {
         lifecycleScope.launch {
             while((activity as MainActivity?)?.webApi?.isNetworkBeingUsed() == true) {
-                delay(500) //TODO is there a better way?
+                delay(500)
                 adapter.notifyDataSetChanged()
             }
-            delay(500)
+            delay(500) // in case of any late database update
             adapter.notifyDataSetChanged()
         }
     }

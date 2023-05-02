@@ -26,10 +26,11 @@ import java.io.IOException
 
 /**
  * A singleton class for interacting with the spotify web API.
- * It can connect to the API, authorize and then import playlists and individual songs.
+ * It can connect to the API, authorize and then import playlists/albums and individual songs.
  *
  * author: Jiří Loun
  */
+
 class WebApi(val activity: MainActivity) {
 
     companion object {
@@ -53,6 +54,7 @@ class WebApi(val activity: MainActivity) {
     private var mAccessToken: String? = null
     private var mCall: Call? = null
 
+    // counter for all network requests for the app to know when all requests have been completed
     private var ongoingRequestsCount = 0
 
     // As soon as the user connects to the internet, I want to connect to the API, but not sooner.
@@ -79,7 +81,6 @@ class WebApi(val activity: MainActivity) {
     init {
         // register the just created callback
         connectivityManager.registerDefaultNetworkCallback(networkCallback)
-        // TODO this should be unregistered onDestroy - is it?
     }
 
     // create a launcher for the Spotify Auth activity
@@ -118,6 +119,7 @@ class WebApi(val activity: MainActivity) {
 
     fun onDestroy() {
         mCall?.cancel()
+        connectivityManager.unregisterNetworkCallback(networkCallback)
     }
 
     private fun isTokenAcquired(): Boolean {
@@ -128,9 +130,10 @@ class WebApi(val activity: MainActivity) {
         return ongoingRequestsCount > 0
     }
 
-    // importing songs from the just created playlist
-    // this function only gets the total count of tracks in the playlist
-    fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope, isAlbum: Boolean) {
+    // importing songs from the just created playlist/album
+    // this function only gets the total count of tracks in the playlist/album
+    fun addSongsFromPlaylist(playlist: Playlist, lifecycleScope: LifecycleCoroutineScope,
+                             isAlbum: Boolean) {
         if (!isTokenAcquired()) {
             requestToken(activity)
             throw NotConnectedException()
@@ -160,7 +163,8 @@ class WebApi(val activity: MainActivity) {
                     while (currentItems < totalItems) {
                         // As the web API does support getting at most 50 results at a time,
                         // I have to split the query
-                        addLimitedSongsFromPlaylist(playlist, currentItems, 50, lifecycleScope, isAlbum)
+                        addLimitedSongsFromPlaylist(playlist, currentItems, 50, lifecycleScope,
+                            isAlbum)
                         currentItems += 50
                     }
                 } catch (e: JSONException) {
@@ -171,7 +175,7 @@ class WebApi(val activity: MainActivity) {
         })
     }
 
-    // this function gets the songUris from the playlist - 50 at a time
+    // this function gets the songUris from the playlist/album - 50 at a time
     private fun addLimitedSongsFromPlaylist(playlist: Playlist,
                                             offset: Int, limit: Int,
                                             lifecycleScope: LifecycleCoroutineScope,
@@ -215,7 +219,8 @@ class WebApi(val activity: MainActivity) {
     }
 
     // this function creates Songs with basic info from the uris - 50 at a time
-    private fun addMultipleSongsWithName(songUris: List<String>, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
+    private fun addMultipleSongsWithName(songUris: List<String>, playlistName: String,
+                                         lifecycleScope: LifecycleCoroutineScope) {
         val songIds = songUris.map { songUri -> UriUtils.extractIdFromUri(songUri) }
         val request: Request = Request.Builder()
             .url("https://api.spotify.com/v1/tracks?ids=${songIds.joinToString(separator = ",")}")

@@ -19,10 +19,11 @@ import com.example.pacetify.util.UriUtils
  *
  * author: Jiří Loun
  */
+
 class AddSongDialog(
     val mainActivity: MainActivity,
     val songs: MutableList<Song>,
-    val lifecycle: Lifecycle,
+    private val lifecycle: Lifecycle,
     val playlistName: String
 ): Dialog(mainActivity){
 

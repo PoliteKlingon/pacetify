@@ -29,16 +29,16 @@ import kotlinx.coroutines.launch
  * In this fragment the user can change the basic settings for the app - motivating, rest and if
  * the rest is enabled, they can adjust the maximal resting time before an upbeat song is played
  * again. Here the user can also choose the color theme for Pacetify.
- * The settings are store in SettingPreferenceFile.
+ * The settings are stored in SettingPreferenceFile.
  *
  * author: Jiří Loun
  */
+
 class SettingsFragment : Fragment() {
 
     private var _binding: FragmentSettingsBinding? = null
 
-    // This property is only valid between onCreateView and
-    // onDestroyView.
+    // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
 
     override fun onDestroyView() {
@@ -51,6 +51,7 @@ class SettingsFragment : Fragment() {
     private fun sliderProgressToTime(progress: Int): Int { return (progress + 1) * 10 }
     private fun timeToSliderProgress(time: Int): Int { return (time / 10) - 1 }
 
+    // The mode selection buttons custom appearance changes
     private fun modeButtonSelect(toSelect: TextView, toDeselect: TextView) {
         toDeselect.setTextColor(binding.btnWalk.hintTextColors.defaultColor)
         toDeselect.setBackgroundResource(R.drawable.blank_outline)
@@ -70,28 +71,41 @@ class SettingsFragment : Fragment() {
         _binding = FragmentSettingsBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
-        binding.swMotivate.isChecked = settingsFile.motivate
-        binding.swRest.isChecked = settingsFile.rest
-        binding.sbRest.progress = timeToSliderProgress(settingsFile.restTime)
-        // enable the slider only if rest option is enabled
-        binding.sbRest.isEnabled = binding.swRest.isChecked
-        binding.tvRest.text = "Maximal resting time: ${settingsFile.restTime} s"
-
         if (settingsFile.walkingMode) modeButtonSelect(binding.btnWalk, binding.btnRun)
         else modeButtonSelect(binding.btnRun, binding.btnWalk)
 
+        // running mode has been selected
         binding.btnRun.setOnClickListener {
             modeButtonSelect(binding.btnRun, binding.btnWalk)
             settingsFile.walkingMode = false
             mainActivity.notifyServiceSettings()
         }
 
+        // walking mode has been selected
         binding.btnWalk.setOnClickListener {
             modeButtonSelect(binding.btnWalk, binding.btnRun)
             settingsFile.walkingMode = true
             mainActivity.notifyServiceSettings()
         }
 
+        binding.swMotivate.isChecked = settingsFile.motivate
+        binding.swMotivate.setOnClickListener {
+            settingsFile.motivate = binding.swMotivate.isChecked
+            mainActivity.notifyServiceSettings()
+        }
+
+        binding.swRest.isChecked = settingsFile.rest
+        binding.swRest.setOnClickListener {
+            settingsFile.rest = binding.swRest.isChecked
+            binding.sbRest.isEnabled = binding.swRest.isChecked
+            mainActivity.notifyServiceSettings()
+        }
+
+        binding.tvRest.text = "Maximal resting time: ${settingsFile.restTime} s"
+
+        binding.sbRest.progress = timeToSliderProgress(settingsFile.restTime)
+        // enable the slider only if rest option is enabled
+        binding.sbRest.isEnabled = binding.swRest.isChecked
         binding.sbRest.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
             override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val curRestTime = sliderProgressToTime(progress)
@@ -105,18 +119,8 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(p0: SeekBar?) {}
         })
 
-        binding.swMotivate.setOnClickListener {
-            settingsFile.motivate = binding.swMotivate.isChecked
-            mainActivity.notifyServiceSettings()
-        }
-
-        binding.swRest.setOnClickListener {
-            settingsFile.rest = binding.swRest.isChecked
-            binding.sbRest.isEnabled = binding.swRest.isChecked
-            mainActivity.notifyServiceSettings()
-        }
-
         val theme = SettingsPreferenceFile.getInstance(mainActivity).theme
+        // check the current theme
         binding.rgTheme.check(
             when (theme) {
                 Theme.DEFAULT -> binding.rbDefault.id
@@ -126,6 +130,7 @@ class SettingsFragment : Fragment() {
                 Theme.AIR     -> binding.rbAir.id
             }
         )
+        // react to theme changes
         binding.rgTheme.setOnCheckedChangeListener { _, checkedId ->
             SettingsPreferenceFile.getInstance(mainActivity).theme = when (checkedId) {
                 binding.rbDefault.id -> Theme.DEFAULT
