@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.pacetify'
+    namespace 'com.xloun.pacetify'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.pacetify"
+        applicationId "com.xloun.pacetify"
         minSdk 24
         targetSdk 33
         versionCode 4
