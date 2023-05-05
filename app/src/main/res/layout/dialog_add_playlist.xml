@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="8dp"
         android:ems="10"
-        android:hint="Spotify playlist URL"
+        android:hint="Spotify playlist/album URL"
         android:inputType="textUri"
         android:text=""
         app:layout_constraintBottom_toTopOf="@+id/btnAddPlaylist"

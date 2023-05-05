@@ -1,6 +1,19 @@
 <resources>
-    <string name="app_name">Spotify Running App</string>
-    <string name="title_home">Spotify Running App</string>
-    <string name="title_dashboard">Playlists</string>
-    <string name="title_notifications">Settings</string>
+    <string name="app_name">Pacetify</string>
+    <string name="title_home">Pacetify</string>
+    <string name="title_playlists">Playlists</string>
+    <string name="title_settings">Settings</string>
+    <string name="service_on">ON</string>
+    <string name="service_off">OFF</string>
+    <string name="service_off_description">You have to start the Service first</string>
+    <string name="home_no_playlists">You have to add a playlist first</string>
+    <string name="home_no_enabled_playlists">You have to enable at least one playlist first</string>
+    <string name="home_text_default">Welcome to Pacetify!</string>
+    <string name="activity_recognition_disabled_warning">Pacetify will not work without activity recognition enabled.
+        Please add this permission in settings.</string>
+    <string name="activity_background_disabled_warning">Pacetify will not measure your cadence properly without background activity enabled.
+        Please enable it (Apps -> Pacetify -> Battery usage -> Allow background activity) and restart Pacetify.</string>
+    <string name="no_playlists">No playlists yet</string>
+    <string name="few_playlists">Adding more playlists will result in better experience</string>
+    <string name="no_songs">No songs yet</string>
 </resources>
