@@ -67,7 +67,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.1"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.6.1"
 
-    //Spotify
+    // Spotify
     implementation files("../app/libs/spotify-app-remote-release-0.7.2.aar")
     implementation "com.spotify.android:auth:2.0.2"
     implementation 'com.squareup.okhttp3:okhttp:4.9.3'

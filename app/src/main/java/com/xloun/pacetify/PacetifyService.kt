@@ -97,7 +97,7 @@ class PacetifyService : Service(), SensorEventListener {
     private var currentRestingTime = restTime
     private var currentlyResting = false
 
-    private var songs: Array<Song> = arrayOf()
+    private var songs: ArrayList<Song> = arrayListOf()
 
     private var playerStateSubscription: Subscription<PlayerState>? = null
     private var timeToSongEnd: Long = 15
@@ -469,6 +469,7 @@ class PacetifyService : Service(), SensorEventListener {
     fun playSong(song: Song) {
         mSpotifyAppRemote?.playerApi?.play(song.uri)
         currentSong = song
+        songs.remove(song) // do not play the song anymore
     }
 
     // This function finds the next song to be played and saves it into the currentSong variable.
@@ -485,11 +486,6 @@ class PacetifyService : Service(), SensorEventListener {
             if (songIdx == -1) {
                 songsLoadingMutex.unlock()
                 return@launch
-            }
-            // if there is more than one song, do not play the same song twice
-            if (currentSong?.uri == songs[songIdx].uri) {
-                if (songIdx < songs.size - 1) songIdx++
-                else if (songIdx > 0) songIdx--
             }
             val song = songs[songIdx]
             songsLoadingMutex.unlock()
@@ -577,7 +573,7 @@ class PacetifyService : Service(), SensorEventListener {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             infoFlow.value = "Loading songs..."
             songsLoadingMutex.lock()
-            if (dao != null) songs = dao!!.getEnabledSongsDistinct()
+            if (dao != null) songs = dao!!.getEnabledSongsDistinct().toCollection(ArrayList())
             songsLoadingMutex.unlock()
             if (songs.isEmpty()) infoFlow.value = "There are no songs to be played."
             else if (restartTicking) startTicking()

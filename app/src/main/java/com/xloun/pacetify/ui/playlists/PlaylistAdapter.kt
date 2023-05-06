@@ -12,6 +12,8 @@ import com.xloun.pacetify.data.Playlist
 import com.xloun.pacetify.data.source.database.PacetifyDao
 import com.xloun.pacetify.databinding.PlaylistBinding
 import com.xloun.pacetify.ui.playlists.songs.SongsDialogFragment
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -62,6 +64,7 @@ class PlaylistAdapter(
                     dao.updatePlaylist(updatedPlaylist)
                     mainActivity.notifyServicePlaylists()
                 }
+                this@PlaylistAdapter.notifyItemRangeChanged(position, 1)
             }
 
             // display dialog to ensure that the user really wanted to delete the playlist

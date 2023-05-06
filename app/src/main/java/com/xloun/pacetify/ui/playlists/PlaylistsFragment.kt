@@ -11,8 +11,10 @@ import androidx.recyclerview.widget.RecyclerView.AdapterDataObserver
 import com.xloun.pacetify.MainActivity
 import com.xloun.pacetify.R
 import com.xloun.pacetify.data.Playlist
+import com.xloun.pacetify.data.source.database.PacetifyDao
 import com.xloun.pacetify.data.source.database.PacetifyDatabase
 import com.xloun.pacetify.databinding.FragmentPlaylistsBinding
+import com.xloun.pacetify.util.NumberUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -35,10 +37,16 @@ class PlaylistsFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var playlists: MutableList<Playlist>
 
+    private val intervalCount = 25
+    private lateinit var intervals: Array<Int>
+
+    private var runScore = 0.0
+    private var walkScore = 0.0
+
     private fun setPlaylistsWarning() {
         binding.tvPlaylistsWarning.text =
             if (playlists.isEmpty()) getString(R.string.no_playlists)
-            else if (playlists.size < 7) getString(R.string.few_playlists)
+            else if (walkScore < 7.0 || runScore < 7.0) getString(R.string.few_playlists)
             else ""
     }
 
@@ -54,6 +62,7 @@ class PlaylistsFragment : Fragment() {
 
         val dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
         playlists = mutableListOf()
+        intervals = Array(intervalCount) {0}
 
         // the tvPlaylistWarning is a textView in which I display the info about no (or few)
         // playlists being present, but I need it to react to changes. Hence the observer.
@@ -61,15 +70,18 @@ class PlaylistsFragment : Fragment() {
         class PlaylistAdapterDataObserver: AdapterDataObserver() {
             override fun onItemRangeRemoved(positionStart: Int, itemCount: Int) {
                 super.onItemRangeRemoved(positionStart, itemCount)
-                setPlaylistsWarning()
+                updateCoverageScores(dao)
             }
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 super.onItemRangeInserted(positionStart, itemCount)
-                setPlaylistsWarning()
+                updateCoverageScores(dao)
             }
             override fun onChanged() { // generic change
                 super.onChanged()
-                setPlaylistsWarning()
+                updateCoverageScores(dao)
+            }
+            override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
+                updateCoverageScores(dao)
             }
         }
 
@@ -97,7 +109,46 @@ class PlaylistsFragment : Fragment() {
             }
         }
 
+        updateCoverageScores(dao)
         return root
+    }
+
+    private fun updateCoverageScores(dao: PacetifyDao) {
+        lifecycleScope.launch {
+            delay(100) // wait for the database late updates
+            val songs = dao.getEnabledSongsDistinct().toCollection(ArrayList())
+            intervals = Array(intervalCount) { 0 }
+
+            for (song in songs) {
+                val interval = (song.bpm / 10).coerceAtMost(intervalCount)
+                intervals[interval]++
+            }
+
+            walkScore = ((intervals[7] / 50.0).coerceAtMost(1.0) +
+                    (intervals[8] / 50.0).coerceAtMost(1.0) +
+                    (intervals[9] / 50.0).coerceAtMost(1.0) +
+                    (intervals[10] / 50.0).coerceAtMost(1.0) +
+                    (intervals[11] / 50.0).coerceAtMost(1.0) +
+                    (intervals[12] / 50.0).coerceAtMost(1.0)) * 10.0 / 6.0
+
+            runScore = ((intervals[12] / 50.0).coerceAtMost(1.0) +
+                    (intervals[13] / 50.0).coerceAtMost(1.0) +
+                    (intervals[14] / 50.0).coerceAtMost(1.0) +
+                    (intervals[15] / 50.0).coerceAtMost(1.0) +
+                    (intervals[16] / 50.0).coerceAtMost(1.0) +
+                    (intervals[17] / 50.0).coerceAtMost(1.0)) * 10.0 / 6.0
+
+            binding.tvScores.text =
+                "BPM coverage (tap for details)\nRun ${NumberUtils.roundToTwoDecPts(runScore)}/10, " +
+                        "Walk ${NumberUtils.roundToTwoDecPts(walkScore)}/10"
+
+            binding.tvScores.setOnClickListener {
+                CoverageDialogFragment(intervals, runScore, walkScore)
+                    .show(childFragmentManager, "")
+            }
+
+            setPlaylistsWarning()
+        }
     }
 
     // this function ensures the recyclerView displayed song numbers to be updated as long as the actual song
