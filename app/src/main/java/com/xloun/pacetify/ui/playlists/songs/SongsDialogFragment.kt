@@ -4,12 +4,14 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
+import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.xloun.pacetify.MainActivity
 import com.xloun.pacetify.R
+import com.xloun.pacetify.data.Playlist
 import com.xloun.pacetify.data.Song
 import com.xloun.pacetify.data.source.database.PacetifyDatabase
 import com.xloun.pacetify.databinding.DialogFragmentSongsBinding
@@ -25,7 +27,7 @@ import kotlinx.coroutines.launch
 
 class SongsDialogFragment(
     private val playlistAdapter: PlaylistAdapter,
-    private val playlistName: String,
+    private val playlist: Playlist,
     private val position: Int
 ): DialogFragment() {
 
@@ -42,7 +44,7 @@ class SongsDialogFragment(
     // only at most one song with pause icon at a time. It also does the song playing/pausing.
     fun playSong(song: Song, view: ImageView) {
         if (mainActivity.serviceBoundFlow.value) {
-            currentlyPlayingSongIcon?.setImageResource(R.drawable.baseline_play_arrow_24)
+            currentlyPlayingSongIcon?.setImageResource(R.drawable.ic_play_24)
             if (song == currentlyPlayingSong) {
                 mainActivity.pacetifyService?.pauseSong()
                 currentlyPlayingSong = null
@@ -69,7 +71,30 @@ class SongsDialogFragment(
         val dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
         songs = mutableListOf()
 
-        binding.tvPlaylistName.text = playlistName
+        binding.tvPlaylistName.text = playlist.name
+        binding.etPlaylistName.text.append(playlist.name)
+        binding.etPlaylistName.isVisible = false
+        binding.btnConfirmRename.isVisible = false
+
+        binding.btnRename.setOnClickListener {
+            binding.tvPlaylistName.isVisible = false
+            binding.etPlaylistName.isVisible = true
+            binding.btnRename.isVisible = false
+            binding.btnConfirmRename.isVisible = true
+        }
+
+        binding.btnConfirmRename.setOnClickListener {
+            binding.tvPlaylistName.isVisible = true
+            binding.etPlaylistName.isVisible = false
+            binding.btnRename.isVisible = true
+            binding.btnConfirmRename.isVisible = false
+            // TODO check name
+            // TODO rename playlist
+            // TODO rename songs in playlist
+        }
+
+        // TODO link button functionality
+
         binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
         class SongAdapterDataObserver: RecyclerView.AdapterDataObserver() {
             // observe the adapter to react to changes
@@ -93,14 +118,14 @@ class SongsDialogFragment(
         binding.rvSongs.layoutManager = LinearLayoutManager(activity)
 
         lifecycleScope.launch {
-            songs.addAll(dao.getSongsFromPlaylist(playlistName))
+            songs.addAll(dao.getSongsFromPlaylist(playlist.name))
             adapter.notifyDataSetChanged()
         }
 
         // the option to add a song into the playlist
         binding.fabAddSong.setOnClickListener {
             AddSongDialog(
-                mainActivity, songs, lifecycle, playlistName
+                mainActivity, songs, lifecycle, playlist.name
             ).apply {
                 setOnDismissListener{
                     lifecycleScope.launch {

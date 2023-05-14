@@ -46,9 +46,9 @@ class SongAdapter(
             tvArtistName.text = "${currentSong.artistName} (${currentSong.bpm} BPM)"
             // The icon should be play if the song is not playing and pause if it is
             if (currentSong == parentDialogFragment.currentlyPlayingSong)
-                icPlayPause.setImageResource(R.drawable.baseline_pause_24)
+                icPlayPause.setImageResource(R.drawable.ic_pause_24)
             else
-                icPlayPause.setImageResource(R.drawable.baseline_play_arrow_24)
+                icPlayPause.setImageResource(R.drawable.ic_play_24)
 
             // display a dialog to ensure that the user wants to delete the song
             btnDelete.setOnClickListener {
@@ -75,9 +75,9 @@ class SongAdapter(
                 // Change icon of this view on click
                 if (mainActivity.serviceBoundFlow.value) {
                     if (currentSong == parentDialogFragment.currentlyPlayingSong)
-                        icPlayPause.setImageResource(R.drawable.baseline_play_arrow_24)
+                        icPlayPause.setImageResource(R.drawable.ic_play_24)
                     else
-                        icPlayPause.setImageResource(R.drawable.baseline_pause_24)
+                        icPlayPause.setImageResource(R.drawable.ic_pause_24)
                 }
 
                 // Handle last playing song icon and actually play/pause the song

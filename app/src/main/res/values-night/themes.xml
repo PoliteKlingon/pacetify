@@ -13,11 +13,11 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <item name="customColorValue">@color/white</item>
-        <item name="background">@drawable/purple</item>
+        <item name="background">@drawable/bg_purple</item>
     </style>
 
     <style name="Theme.Pacetify.Default.NoBg" parent="Theme.Pacetify.Default">
-        <item name="background">@drawable/blank</item>
+        <item name="background">@drawable/bg_blank</item>
     </style>
 
     <style name="Theme.Pacetify.Fire" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
@@ -33,11 +33,11 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <item name="customColorValue">@color/white</item>
-        <item name="background">@drawable/orange</item>
+        <item name="background">@drawable/bg_orange</item>
     </style>
 
     <style name="Theme.Pacetify.Fire.NoBg" parent="Theme.Pacetify.Fire">
-        <item name="background">@drawable/blank</item>
+        <item name="background">@drawable/bg_blank</item>
     </style>
 
     <style name="Theme.Pacetify.Water" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
@@ -53,11 +53,11 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <item name="customColorValue">@color/white</item>
-        <item name="background">@drawable/blue</item>
+        <item name="background">@drawable/bg_blue</item>
     </style>
 
     <style name="Theme.Pacetify.Water.NoBg" parent="Theme.Pacetify.Water">
-        <item name="background">@drawable/blank</item>
+        <item name="background">@drawable/bg_blank</item>
     </style>
 
     <style name="Theme.Pacetify.Earth" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
@@ -73,11 +73,11 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <item name="customColorValue">@color/white</item>
-        <item name="background">@drawable/green</item>
+        <item name="background">@drawable/bg_green</item>
     </style>
 
     <style name="Theme.Pacetify.Earth.NoBg" parent="Theme.Pacetify.Earth">
-        <item name="background">@drawable/blank</item>
+        <item name="background">@drawable/bg_blank</item>
     </style>
 
     <style name="Theme.Pacetify.Air" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
@@ -93,11 +93,11 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <item name="customColorValue">@color/white</item>
-        <item name="background">@drawable/pink</item>
+        <item name="background">@drawable/bg_pink</item>
     </style>
 
     <style name="Theme.Pacetify.Air.NoBg" parent="Theme.Pacetify.Air">
-        <item name="background">@drawable/blank</item>
+        <item name="background">@drawable/bg_blank</item>
     </style>
     
 </resources>

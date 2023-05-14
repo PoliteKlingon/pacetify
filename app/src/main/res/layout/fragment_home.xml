@@ -36,7 +36,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:background="@drawable/oval_button"
+        android:background="@drawable/btn_oval"
         android:text="OFF"
         android:backgroundTint="?attr/colorSecondary"
         android:textColor="?attr/colorOnSecondary"

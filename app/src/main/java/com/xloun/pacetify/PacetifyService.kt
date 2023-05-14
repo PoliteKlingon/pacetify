@@ -221,7 +221,7 @@ class PacetifyService : Service(), SensorEventListener {
 
             // Create the skip song action
             val skipAction = Notification.Action.Builder(
-                Icon.createWithResource(this, R.drawable.ic_skip),
+                Icon.createWithResource(this, R.drawable.ic_skip_24),
                 "Skip Song",
                 pendingSkipIntent
             ).build()

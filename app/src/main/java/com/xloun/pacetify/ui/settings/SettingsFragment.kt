@@ -42,9 +42,9 @@ class SettingsFragment : Fragment() {
     // The mode selection buttons custom appearance changes
     private fun modeButtonSelect(toSelect: TextView, toDeselect: TextView) {
         toDeselect.setTextColor(binding.btnWalk.hintTextColors.defaultColor)
-        toDeselect.setBackgroundResource(R.drawable.blank_outline)
+        toDeselect.setBackgroundResource(R.drawable.btn_blank_outline)
         toSelect.setTextColor(binding.btnRun.linkTextColors)
-        toSelect.setBackgroundResource(R.drawable.radius_outline)
+        toSelect.setBackgroundResource(R.drawable.btn_radius_outline)
     }
 
     override fun onCreateView(
