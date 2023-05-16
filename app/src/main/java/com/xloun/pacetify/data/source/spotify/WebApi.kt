@@ -28,7 +28,8 @@ import java.io.IOException
  * A singleton class for interacting with the spotify web API.
  * It can connect to the API, authorize and then import playlists/albums and individual songs.
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class WebApi(val activity: MainActivity) {

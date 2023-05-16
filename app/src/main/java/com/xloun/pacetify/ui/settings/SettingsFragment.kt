@@ -19,7 +19,8 @@ import com.xloun.pacetify.databinding.FragmentSettingsBinding
  * again. Here the user can also choose the color theme for Pacetify.
  * The settings are stored in SettingPreferenceFile.
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class SettingsFragment : Fragment() {

@@ -20,7 +20,8 @@ import kotlinx.coroutines.launch
  * This is the adapter for playlist recyclerView - each playlist is displayed with its song count,
  * it can be deleted or clicked on to manage its songs.
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class PlaylistAdapter(

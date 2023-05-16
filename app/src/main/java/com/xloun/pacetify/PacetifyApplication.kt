@@ -5,7 +5,8 @@ import android.app.Application
 /**
  * The Pacetify application
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class PacetifyApplication: Application()

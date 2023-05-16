@@ -3,7 +3,8 @@ package com.xloun.pacetify.data.source.preferenceFiles
 /**
  * The possible themes of Pacetify
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 enum class Theme {

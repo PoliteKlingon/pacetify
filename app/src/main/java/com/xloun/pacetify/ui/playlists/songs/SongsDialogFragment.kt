@@ -26,7 +26,8 @@ import kotlinx.coroutines.launch
 /**
  * A dialogFragment for managing the songs of the playlist.
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class SongsDialogFragment(

@@ -10,7 +10,8 @@ import com.xloun.pacetify.data.Song
 /**
  * The Pacetify database - singleton class
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 @Database(entities = [Playlist::class, Song::class], version = 1)

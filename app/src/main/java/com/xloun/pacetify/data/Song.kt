@@ -3,7 +3,8 @@ package com.xloun.pacetify.data
 import androidx.room.Entity
 
 /**
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 @Entity(primaryKeys = ["uri", "fromPlaylist"])

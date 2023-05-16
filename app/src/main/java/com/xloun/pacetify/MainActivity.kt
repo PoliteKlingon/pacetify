@@ -20,7 +20,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 /**
  * The main (and the only one) activity in Pacetify
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class MainActivity : AppCompatActivity() {

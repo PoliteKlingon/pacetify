@@ -33,7 +33,8 @@ import java.util.concurrent.CancellationException
  * currently played song and other running info like resting time left is displayed. The user
  * can also skip a song.
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class HomeFragment : Fragment() {

@@ -8,7 +8,8 @@ import com.xloun.pacetify.R
  * The file stores the settings entered by the user - application mode, motivate option, rest
  * option, restTime, theme and background addition preference.
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class SettingsPreferenceFile(

@@ -1,6 +1,5 @@
 package com.xloun.pacetify.ui.playlists
 
-import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,11 +8,13 @@ import android.widget.ImageView
 import androidx.core.view.children
 import androidx.fragment.app.DialogFragment
 import com.xloun.pacetify.R
-import com.xloun.pacetify.data.Song
 import com.xloun.pacetify.databinding.DialogFragmentCoverageBinding
 import com.xloun.pacetify.util.NumberUtils
-import kotlin.math.roundToInt
-import kotlin.math.roundToLong
+
+/**
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
+ */
 
 class CoverageDialogFragment(
         private val intervals: Array<Int>,

@@ -7,7 +7,8 @@ import com.xloun.pacetify.data.Song
 /**
  * The data access object for the Pacetify database
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 @Dao

@@ -17,7 +17,8 @@ import com.xloun.pacetify.util.UriUtils
 /**
  * A dialog for adding a song. URL is required, checked and then the song is imported.
  *
- * author: Jiří Loun
+ * Copyright (c) 2023 Jiří Loun
+ * All rights reserved.
  */
 
 class AddSongDialog(
