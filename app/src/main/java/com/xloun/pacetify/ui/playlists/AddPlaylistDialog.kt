@@ -14,6 +14,7 @@ import com.xloun.pacetify.data.Playlist
 import com.xloun.pacetify.data.source.database.PacetifyDao
 import com.xloun.pacetify.util.NotConnectedException
 import com.xloun.pacetify.util.UriUtils
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -60,19 +61,20 @@ class AddPlaylistDialog(
                 val isAlbum = UriUtils.isValidSpotifyAlbumUri(uri)
                 val playlist = Playlist(id, name, enabled = true, isAlbum = isAlbum)
 
-                // import songs form the playlist
+                // import songs from the playlist
                 try {
-                    mainActivity.webApi.addSongsFromPlaylist(playlist, lifecycle.coroutineScope, isAlbum)
+                    lifecycle.coroutineScope.launch {
+                        val newId: Long = dao.insertPlaylist(playlist)
+                        playlist.id = newId
+                        mainActivity.webApi.addSongsFromPlaylist(playlist, lifecycle.coroutineScope, isAlbum)
+
+                        mainActivity.notifyServicePlaylists()
+                    }
 
                     playlists.add(playlist)
                     adapter.notifyItemInserted(playlists.size - 1)
                     etNewPlaylistName.setText("")
                     etNewPlaylistUri.setText("")
-
-                    lifecycle.coroutineScope.launch {
-                        dao.insertPlaylist(playlist)
-                        mainActivity.notifyServicePlaylists()
-                    }
 
                     dismiss()
                 }

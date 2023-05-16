@@ -14,7 +14,7 @@ import com.xloun.pacetify.data.Song
 @Dao
 interface PacetifyDao {
     @Insert(entity = Playlist::class, onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertPlaylist(playlist: Playlist)
+    suspend fun insertPlaylist(playlist: Playlist): Long
 
     // safe insert
     @Transaction
@@ -30,21 +30,21 @@ interface PacetifyDao {
     suspend fun _insertSong(song: Song)
 
     // get distinct songs from all enabled playlists
-    @Query("SELECT * FROM Song INNER JOIN Playlist ON Playlist.name = Song.fromPlaylist WHERE Playlist.enabled = true GROUP BY uri ORDER BY bpm ASC")
+    @Query("SELECT * FROM Song INNER JOIN Playlist ON Playlist.id = Song.fromPlaylist WHERE Playlist.enabled = true GROUP BY uri ORDER BY bpm ASC")
     suspend fun getEnabledSongsDistinct(): Array<Song>
 
     // get the count of distinct songs from all enabled playlists
-    @Query("SELECT COUNT(*) FROM Song INNER JOIN Playlist ON Playlist.name = Song.fromPlaylist WHERE Playlist.enabled = true")
+    @Query("SELECT COUNT(*) FROM Song INNER JOIN Playlist ON Playlist.id = Song.fromPlaylist WHERE Playlist.enabled = true")
     suspend fun numEnabledSongsDistinct(): Int
 
     @Query("SELECT * FROM Song ORDER BY name ASC")
     suspend fun getAllSongsWithDuplicates(): Array<Song>
 
-    @Query("SELECT COUNT(*) FROM Song WHERE fromPlaylist = :playlistName")
-    suspend fun getSongsNumInPlaylist(playlistName: String): Int
+    @Query("SELECT COUNT(*) FROM Song WHERE fromPlaylist = :playlistId")
+    suspend fun getSongsNumInPlaylist(playlistId: Long): Int
 
-    @Query("SELECT * FROM Song WHERE fromPlaylist = :playlistName ORDER BY name")
-    suspend fun getSongsFromPlaylist(playlistName: String): Array<Song>
+    @Query("SELECT * FROM Song WHERE fromPlaylist = :playlistId ORDER BY name")
+    suspend fun getSongsFromPlaylist(playlistId: Long): Array<Song>
 
     @Query("SELECT * FROM Playlist")
     suspend fun getPlaylists(): List<Playlist>
@@ -53,8 +53,8 @@ interface PacetifyDao {
     suspend fun numOfPlaylists(): Int
 
     // check if playlist exists - always returns 0 or 1
-    @Query("SELECT COUNT(*) FROM Playlist WHERE name = :name")
-    suspend fun existenceOfPlaylist(name: String): Int
+    @Query("SELECT COUNT(*) FROM Playlist WHERE id = :id")
+    suspend fun existenceOfPlaylist(id: Long): Int
 
     @Query("SELECT COUNT(*) FROM Playlist WHERE enabled = true")
     suspend fun numOfEnabledPlaylists(): Int

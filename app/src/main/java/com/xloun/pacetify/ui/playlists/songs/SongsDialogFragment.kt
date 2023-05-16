@@ -106,9 +106,9 @@ class SongsDialogFragment(
         binding.btnLink.setOnClickListener {
             val intent =
                 if (playlist.isAlbum)
-                    Intent(Intent.ACTION_VIEW, Uri.parse("spotify:album:${playlist.id}"))
+                    Intent(Intent.ACTION_VIEW, Uri.parse("spotify:album:${playlist.spotifyId}"))
                 else
-                    Intent(Intent.ACTION_VIEW, Uri.parse("spotify:playlist:${playlist.id}"))
+                    Intent(Intent.ACTION_VIEW, Uri.parse("spotify:playlist:${playlist.spotifyId}"))
             try {
                 startActivity(intent)
             } catch (_: Exception) {
@@ -139,21 +139,21 @@ class SongsDialogFragment(
         binding.rvSongs.layoutManager = LinearLayoutManager(activity)
 
         lifecycleScope.launch {
-            songs.addAll(dao.getSongsFromPlaylist(playlist.name))
+            songs.addAll(dao.getSongsFromPlaylist(playlist.id))
             adapter.notifyDataSetChanged()
         }
 
         // the option to add a song into the playlist
         binding.fabAddSong.setOnClickListener {
             AddSongDialog(
-                mainActivity, songs, lifecycle, playlist.name
+                mainActivity, songs, lifecycle, playlist.id
             ).apply {
                 setOnDismissListener{
                     lifecycleScope.launch {
                         delay(1000) // Wait for the song to load
                         // I do not know where is the new song in the list, so I have to reload it
                         songs.removeAll { true }
-                        songs.addAll(dao.getSongsFromPlaylist(playlistName))
+                        songs.addAll(dao.getSongsFromPlaylist(playlist.id))
                         adapter.notifyDataSetChanged()
                         binding.tvNoSongs.text = ""
                         if (mainActivity.serviceBoundFlow.value)

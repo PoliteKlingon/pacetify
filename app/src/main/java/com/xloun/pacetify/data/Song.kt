@@ -13,5 +13,5 @@ data class Song (
     val name: String,
     val artistName: String,
     val bpm: Int,
-    val fromPlaylist: String,
+    val fromPlaylist: Long,
 )

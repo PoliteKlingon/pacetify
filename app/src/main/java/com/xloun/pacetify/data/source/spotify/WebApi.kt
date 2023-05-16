@@ -142,7 +142,7 @@ class WebApi(val activity: MainActivity) {
 
         val endpoint = if (isAlbum) "albums" else "playlists"
         val request: Request = Request.Builder()
-            .url("https://api.spotify.com/v1/$endpoint/${playlist.id}/tracks")
+            .url("https://api.spotify.com/v1/$endpoint/${playlist.spotifyId}/tracks")
             .addHeader("Authorization", "Bearer $mAccessToken")
             .build()
 
@@ -183,7 +183,7 @@ class WebApi(val activity: MainActivity) {
                                             isAlbum: Boolean) {
         val endpoint = if (isAlbum) "albums" else "playlists"
         val request: Request = Request.Builder()
-            .url("https://api.spotify.com/v1/$endpoint/${playlist.id}/tracks?offset=$offset&limit=$limit")
+            .url("https://api.spotify.com/v1/$endpoint/${playlist.spotifyId}/tracks?offset=$offset&limit=$limit")
             .addHeader("Authorization", "Bearer $mAccessToken")
             .build()
 
@@ -210,7 +210,7 @@ class WebApi(val activity: MainActivity) {
 
                         songUris.add(songUri)
                     }
-                    addMultipleSongsWithName(songUris, playlist.name, lifecycleScope)
+                    addMultipleSongsWithName(songUris, playlist.id, lifecycleScope)
                 } catch (e: JSONException) {
                     Log.d("WebAPI","Failed to parse data: $e")
                 }
@@ -220,7 +220,7 @@ class WebApi(val activity: MainActivity) {
     }
 
     // this function creates Songs with basic info from the uris - 50 at a time
-    private fun addMultipleSongsWithName(songUris: List<String>, playlistName: String,
+    private fun addMultipleSongsWithName(songUris: List<String>, playlistId: Long,
                                          lifecycleScope: LifecycleCoroutineScope) {
         val songIds = songUris.map { songUri -> UriUtils.extractIdFromUri(songUri) }
         val request: Request = Request.Builder()
@@ -252,7 +252,7 @@ class WebApi(val activity: MainActivity) {
                         val artistName = item.getJSONArray("artists")
                             .getJSONObject(0).getString("name")
 
-                        songs.add(Song(songUri, songName, artistName, -1, playlistName))
+                        songs.add(Song(songUri, songName, artistName, -1, playlistId))
                     }
 
                     addMultipleSongs(songs, lifecycleScope)
@@ -314,12 +314,12 @@ class WebApi(val activity: MainActivity) {
 
     // import a single song
     // get the basic info about the song
-    fun addSongWithName(songUri: String, playlistName: String, lifecycleScope: LifecycleCoroutineScope) {
+    fun addSongWithName(songUri: String, playlistId: Long, lifecycleScope: LifecycleCoroutineScope) {
         if (!isTokenAcquired()) {
             requestToken(activity)
             throw NotConnectedException()
         }
 
-        addMultipleSongsWithName(listOf(songUri), playlistName, lifecycleScope)
+        addMultipleSongsWithName(listOf(songUri), playlistId, lifecycleScope)
     }
 }

@@ -25,7 +25,7 @@ class AddSongDialog(
     val mainActivity: MainActivity,
     val songs: MutableList<Song>,
     private val lifecycle: Lifecycle,
-    val playlistName: String
+    private val playlistId: Long
 ): Dialog(mainActivity){
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,7 +48,7 @@ class AddSongDialog(
                 Toast.makeText(mainActivity, "Invalid song URL", Toast.LENGTH_LONG).show()
             else {try {
                     //import song
-                    mainActivity.webApi.addSongWithName(uri, playlistName, lifecycle.coroutineScope)
+                    mainActivity.webApi.addSongWithName(uri, playlistId, lifecycle.coroutineScope)
                     mainActivity.notifyServicePlaylists(restartTicking = false)
 
                     dismiss()

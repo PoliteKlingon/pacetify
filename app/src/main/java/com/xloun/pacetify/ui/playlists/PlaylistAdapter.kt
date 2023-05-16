@@ -49,7 +49,7 @@ class PlaylistAdapter(
         holder.binding.apply {
             tvPlaylistName.text = currentPlaylist.name
             lifecycleScope.launch  {
-                val songNum = dao.getSongsNumInPlaylist(currentPlaylist.name)
+                val songNum = dao.getSongsNumInPlaylist(currentPlaylist.id)
                 tvPlaylistSongs.text = if (songNum == 0) "Empty or invalid playlist" else "$songNum tracks (tap to manage)"
             }
 

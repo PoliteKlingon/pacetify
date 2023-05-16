@@ -10,9 +10,11 @@ import androidx.room.PrimaryKey
 
 @Entity
 data class Playlist(
-    val id: String,
-    @PrimaryKey(autoGenerate = false)
+    val spotifyId: String,
     val name: String,
     var enabled: Boolean,
     var isAlbum: Boolean
-)
+){
+    @PrimaryKey(autoGenerate = true)
+    var id: Long = 0
+}
