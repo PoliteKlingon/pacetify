@@ -56,8 +56,8 @@ class AddPlaylistDialog(
                 Toast.makeText(mainActivity, "Invalid playlist/album URL", Toast.LENGTH_LONG).show()
             else {
                 val id = UriUtils.extractIdFromUri(uri)
-                val playlist = Playlist(id, name, true)
                 val isAlbum = UriUtils.isValidSpotifyAlbumUri(uri)
+                val playlist = Playlist(id, name, enabled = true, isAlbum = isAlbum)
 
                 // import songs form the playlist
                 try {

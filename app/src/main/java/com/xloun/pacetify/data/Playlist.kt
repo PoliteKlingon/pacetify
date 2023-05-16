@@ -12,5 +12,6 @@ data class Playlist(
     val id: String,
     @PrimaryKey(autoGenerate = false)
     val name: String,
-    var enabled: Boolean
+    var enabled: Boolean,
+    var isAlbum: Boolean
 )

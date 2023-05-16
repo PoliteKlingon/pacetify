@@ -1,9 +1,12 @@
 package com.xloun.pacetify.ui.playlists.songs
 
 import android.content.DialogInterface
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.*
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
@@ -18,6 +21,7 @@ import com.xloun.pacetify.databinding.DialogFragmentSongsBinding
 import com.xloun.pacetify.ui.playlists.PlaylistAdapter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
 
 /**
  * A dialogFragment for managing the songs of the playlist.
@@ -98,7 +102,18 @@ class SongsDialogFragment(
             // TODO rename songs in playlist
         }
 
-        // TODO link button functionality
+        binding.btnLink.setOnClickListener {
+            val intent =
+                if (playlist.isAlbum)
+                    Intent(Intent.ACTION_VIEW, Uri.parse("spotify:album:${playlist.id}"))
+                else
+                    Intent(Intent.ACTION_VIEW, Uri.parse("spotify:playlist:${playlist.id}"))
+            try {
+                startActivity(intent)
+            } catch (_: Exception) {
+                Toast.makeText(mainActivity, "Cannot open link", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         binding.tvNoSongs.text = if (songs.isEmpty()) getString(R.string.no_songs) else ""
         class SongAdapterDataObserver: RecyclerView.AdapterDataObserver() {
