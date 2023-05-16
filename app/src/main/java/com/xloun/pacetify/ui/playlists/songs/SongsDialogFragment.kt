@@ -73,20 +73,25 @@ class SongsDialogFragment(
 
         binding.tvPlaylistName.text = playlist.name
         binding.etPlaylistName.text.append(playlist.name)
-        binding.etPlaylistName.isVisible = false
+        binding.etPlaylistName.alpha = 0.0f
+        binding.etPlaylistName.isEnabled = false
         binding.btnConfirmRename.isVisible = false
 
         binding.btnRename.setOnClickListener {
-            binding.tvPlaylistName.isVisible = false
-            binding.etPlaylistName.isVisible = true
-            binding.btnRename.isVisible = false
+            binding.tvPlaylistName.alpha = 0.0f
+            binding.etPlaylistName.alpha = 1.0f
+            binding.etPlaylistName.isEnabled = true
+            binding.btnRename.isEnabled = false
+            binding.btnRename.alpha = 0.0f
             binding.btnConfirmRename.isVisible = true
         }
 
         binding.btnConfirmRename.setOnClickListener {
-            binding.tvPlaylistName.isVisible = true
-            binding.etPlaylistName.isVisible = false
-            binding.btnRename.isVisible = true
+            binding.tvPlaylistName.alpha = 1.0f
+            binding.etPlaylistName.alpha = 0.0f
+            binding.etPlaylistName.isEnabled = false
+            binding.btnRename.isEnabled = true
+            binding.btnRename.alpha = 1.0f
             binding.btnConfirmRename.isVisible = false
             // TODO check name
             // TODO rename playlist

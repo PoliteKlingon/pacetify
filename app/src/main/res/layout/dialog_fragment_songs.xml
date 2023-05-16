@@ -6,10 +6,11 @@
 
     <TextView
         android:id="@+id/tvPlaylistName"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
         android:textSize="22sp"
-        android:layout_margin="8dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
         android:textAlignment="center"
         android:text="Playlist name"
         app:layout_constraintEnd_toStartOf="@+id/btnRename"
@@ -18,23 +19,25 @@
 
     <EditText
         android:id="@+id/etPlaylistName"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textSize="22sp"
-        android:layout_marginHorizontal="8dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
         android:textAlignment="center"
         android:hint="Playlist name"
-        app:layout_constraintEnd_toStartOf="@+id/btnConfirmRename"
+        app:layout_constraintEnd_toStartOf="@+id/btnRename"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/btnRename"
         android:layout_width="36dp"
-        android:layout_marginHorizontal="8dp"
         android:layout_height="46dp"
+        android:layout_marginHorizontal="8dp"
         app:layout_constraintEnd_toStartOf="@+id/btnLink"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@id/etPlaylistName"
+        app:layout_constraintBottom_toBottomOf="@id/etPlaylistName"
         android:drawableTop="@drawable/ic_rename_24"
         android:drawableTint="?attr/colorOnPrimary"
         />
@@ -42,21 +45,30 @@
     <Button
         android:id="@+id/btnConfirmRename"
         android:layout_width="36dp"
-        android:layout_marginHorizontal="8dp"
         android:layout_height="46dp"
-        app:layout_constraintEnd_toStartOf="@+id/btnLink"
-        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginHorizontal="8dp"
         android:drawableTop="@drawable/ic_check_24"
         android:drawableTint="?attr/colorOnPrimary"
-        />
+        app:layout_constraintEnd_toStartOf="@+id/btnLink"
+        app:layout_constraintTop_toTopOf="@id/etPlaylistName"
+        app:layout_constraintBottom_toBottomOf="@id/etPlaylistName"/>
+
+    <View
+        android:id="@+id/line"
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:layout_marginTop="8dp"
+        android:background="#c0c0c0"
+        app:layout_constraintTop_toBottomOf="@+id/etPlaylistName" />
 
     <Button
         android:id="@+id/btnLink"
         android:layout_width="36dp"
-        android:layout_marginHorizontal="8dp"
         android:layout_height="46dp"
+        android:layout_marginHorizontal="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@id/etPlaylistName"
+        app:layout_constraintBottom_toBottomOf="@id/etPlaylistName"
         android:drawableTop="@drawable/ic_link_24"
         android:drawableTint="?attr/colorOnPrimary"
         />
@@ -69,7 +81,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnLink" />
+        app:layout_constraintTop_toBottomOf="@id/line" />
 
     <TextView
         android:id="@+id/tvNoSongs"
