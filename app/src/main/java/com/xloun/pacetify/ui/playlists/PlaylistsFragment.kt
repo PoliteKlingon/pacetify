@@ -82,6 +82,7 @@ class PlaylistsFragment : Fragment() {
                 updateCoverageScores(dao)
             }
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int) {
+                super.onItemRangeChanged(positionStart, itemCount)
                 updateCoverageScores(dao)
             }
         }

@@ -4,6 +4,7 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.*
 import android.widget.ImageView
 import android.widget.Toast
@@ -19,6 +20,7 @@ import com.xloun.pacetify.data.Song
 import com.xloun.pacetify.data.source.database.PacetifyDatabase
 import com.xloun.pacetify.databinding.DialogFragmentSongsBinding
 import com.xloun.pacetify.ui.playlists.PlaylistAdapter
+import com.xloun.pacetify.util.UriUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -32,7 +34,7 @@ import kotlinx.coroutines.launch
 
 class SongsDialogFragment(
     private val playlistAdapter: PlaylistAdapter,
-    private val playlist: Playlist,
+    private val playlists: MutableList<Playlist>,
     private val position: Int
 ): DialogFragment() {
 
@@ -75,6 +77,7 @@ class SongsDialogFragment(
 
         val dao = PacetifyDatabase.getInstance(mainActivity).pacetifyDao
         songs = mutableListOf()
+        val playlist = playlists[position]
 
         binding.tvPlaylistName.text = playlist.name
         binding.etPlaylistName.text.append(playlist.name)
@@ -92,15 +95,27 @@ class SongsDialogFragment(
         }
 
         binding.btnConfirmRename.setOnClickListener {
-            binding.tvPlaylistName.alpha = 1.0f
-            binding.etPlaylistName.alpha = 0.0f
-            binding.etPlaylistName.isEnabled = false
-            binding.btnRename.isEnabled = true
-            binding.btnRename.alpha = 1.0f
-            binding.btnConfirmRename.isVisible = false
-            // TODO check name
-            // TODO rename playlist
-            // TODO rename songs in playlist
+            val newName = binding.etPlaylistName.text.toString()
+
+            if (newName.isEmpty())
+                Toast.makeText(mainActivity, "Name cannot be empty", Toast.LENGTH_LONG).show()
+            else if (playlists.map { p -> if (p.id != playlist.id) p.name else "" } .contains(newName))
+                Toast.makeText(mainActivity, "Playlist \"$newName\" already exists", Toast.LENGTH_LONG).show()
+            else {
+                val newPlaylist = playlist.copy(name = newName)
+                newPlaylist.id = playlist.id
+                binding.tvPlaylistName.text = newName
+                lifecycleScope.launch {
+                    dao.updatePlaylist(newPlaylist)
+                    playlists[position] = dao.getPlaylist(playlists[position].id)
+                }
+                binding.tvPlaylistName.alpha = 1.0f
+                binding.etPlaylistName.alpha = 0.0f
+                binding.etPlaylistName.isEnabled = false
+                binding.btnRename.isEnabled = true
+                binding.btnRename.alpha = 1.0f
+                binding.btnConfirmRename.isVisible = false
+            }
         }
 
         binding.btnLink.setOnClickListener {
@@ -203,8 +218,7 @@ class SongsDialogFragment(
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        // I could have added or deleted a song, so I update the list for it to have correct
-        // song counts
+        // I could have added or deleted a song or renamed the playlist, so I update the list
         playlistAdapter.notifyItemChanged(position)
     }
 }

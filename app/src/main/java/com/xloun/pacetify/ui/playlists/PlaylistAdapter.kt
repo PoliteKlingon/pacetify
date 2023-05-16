@@ -91,7 +91,7 @@ class PlaylistAdapter(
 
             // onClick display songs in the playlist as a dialogFragment
             clPlaylist.setOnClickListener {
-                SongsDialogFragment(this@PlaylistAdapter, currentPlaylist, position)
+                SongsDialogFragment(this@PlaylistAdapter, playlists, position)
                     .show(childFragmentManager, "")
             }
         }

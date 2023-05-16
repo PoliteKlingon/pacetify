@@ -49,6 +49,9 @@ interface PacetifyDao {
     @Query("SELECT * FROM Playlist")
     suspend fun getPlaylists(): List<Playlist>
 
+    @Query("SELECT * FROM Playlist WHERE id = :id")
+    suspend fun getPlaylist(id: Long): Playlist
+
     @Query("SELECT COUNT(*) FROM Playlist")
     suspend fun numOfPlaylists(): Int
 
