@@ -1,6 +1,8 @@
 package com.xloun.pacetify.ui.playlists.songs
 
 import android.app.Dialog
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.Window
 import android.widget.Button
@@ -38,6 +40,38 @@ class AddSongDialog(
         // references to the view elements
         val etNewSongUri = findViewById<EditText>(R.id.etNewSongUri)
         val btnAddSong = findViewById<Button>(R.id.btnAddSong)
+        val btnPasteClipboard = findViewById<Button>(R.id.btnPasteClipboard)
+
+        val clipboard = mainActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+        btnPasteClipboard.setOnClickListener {
+            val clipData = clipboard.primaryClip
+            if (clipData != null && clipData.itemCount > 0) {
+                val item = clipData.getItemAt(0)
+                val clipboardText = item.text
+                if (clipboardText != null) {
+                    if (!UriUtils.isValidSpotifySongUri(clipboardText.toString()))
+                        Toast.makeText(mainActivity, "Invalid song URL", Toast.LENGTH_LONG).show()
+                    else {
+                        etNewSongUri.setText(clipboardText.toString())
+
+                        try {
+                            //import song
+                            mainActivity.webApi.addSongWithName(clipboardText.toString(), playlistId, lifecycle.coroutineScope)
+                            mainActivity.notifyServicePlaylists(restartTicking = false)
+
+                            dismiss()
+                        }
+                        catch (e: NotConnectedException) {
+                            Toast.makeText(
+                                mainActivity,
+                                "Please connect to the internet and try again",
+                                Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+        }
 
         btnAddSong.setOnClickListener {
             val uri = etNewSongUri.text.toString()

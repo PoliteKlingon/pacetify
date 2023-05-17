@@ -1,6 +1,8 @@
 package com.xloun.pacetify.ui.playlists
 
 import android.app.Dialog
+import android.content.ClipboardManager
+import android.content.Context
 import android.os.Bundle
 import android.view.Window
 import android.widget.Button
@@ -12,9 +14,11 @@ import com.xloun.pacetify.MainActivity
 import com.xloun.pacetify.R
 import com.xloun.pacetify.data.Playlist
 import com.xloun.pacetify.data.source.database.PacetifyDao
+import com.xloun.pacetify.data.source.spotify.WebApi
 import com.xloun.pacetify.util.NotConnectedException
 import com.xloun.pacetify.util.UriUtils
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /**
@@ -43,6 +47,39 @@ class AddPlaylistDialog(
         val etNewPlaylistName = findViewById<EditText>(R.id.etNewPlaylistName)
         val etNewPlaylistUri = findViewById<EditText>(R.id.etNewPlaylistUri)
         val btnAddPlaylist = findViewById<Button>(R.id.btnAddPlaylist)
+        val btnPasteClipboard = findViewById<Button>(R.id.btnPasteClipboard)
+        
+        val clipboard = mainActivity.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+        btnPasteClipboard.setOnClickListener {
+            val clipData = clipboard.primaryClip
+            if (clipData != null && clipData.itemCount > 0) {
+                val item = clipData.getItemAt(0)
+                val clipboardText = item.text
+                if (clipboardText != null) {
+                    val uri = clipboardText.toString()
+                    if (uri.isEmpty())
+                        Toast.makeText(mainActivity, "URL cannot be empty", Toast.LENGTH_LONG).show()
+                    else if (!UriUtils.isValidSpotifyPlaylistUri(uri) && !UriUtils.isValidSpotifyAlbumUri(uri))
+                        Toast.makeText(mainActivity, "Invalid playlist/album URL", Toast.LENGTH_LONG).show()
+                    else {
+                        etNewPlaylistUri.setText(clipboardText.toString())
+                        try {
+                            val nameFlow = mainActivity.webApi.getPlaylistName(uri)
+                            lifecycle.coroutineScope.launch {
+                                nameFlow.collectLatest { value -> etNewPlaylistName.setText(value) }
+                            }
+                        }
+                        catch (e: NotConnectedException) {
+                            Toast.makeText(
+                                mainActivity,
+                                "Please connect to the internet and try again",
+                                Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+        }
 
         btnAddPlaylist.setOnClickListener {
             val name = etNewPlaylistName.text.toString()

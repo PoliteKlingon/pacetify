@@ -18,8 +18,20 @@
         android:inputType="textUri"
         android:text=""
         app:layout_constraintBottom_toTopOf="@+id/btnAddSong"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnPasteClipboard"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/btnPasteClipboard"
+        android:layout_width="36dp"
+        android:layout_height="46dp"
+        android:layout_marginEnd="8dp"
+        android:drawableTop="@drawable/ic_paste_24"
+        android:drawableTint="?attr/colorOnPrimary"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/etNewSongUri"
+        app:layout_constraintBottom_toBottomOf="@+id/etNewSongUri"
+        />
 
     <Button
         android:id="@+id/btnAddSong"

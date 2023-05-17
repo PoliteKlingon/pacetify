@@ -18,11 +18,13 @@ import com.xloun.pacetify.util.UriUtils
 import com.spotify.sdk.android.auth.AuthorizationClient
 import com.spotify.sdk.android.auth.AuthorizationRequest
 import com.spotify.sdk.android.auth.AuthorizationResponse
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import okhttp3.*
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.IOException
+import java.net.URI
 
 /**
  * A singleton class for interacting with the spotify web API.
@@ -321,5 +323,45 @@ class WebApi(val activity: MainActivity) {
         }
 
         addMultipleSongsWithName(listOf(songUri), playlistId, lifecycleScope)
+    }
+
+    fun getPlaylistName(uri: String): MutableStateFlow<String> {
+        if (!isTokenAcquired()) {
+            requestToken(activity)
+            throw NotConnectedException()
+        }
+
+        val id = UriUtils.extractIdFromUri(uri)
+        val isAlbum = UriUtils.isValidSpotifyAlbumUri(uri)
+        val nameFlow = MutableStateFlow("")
+
+        val endpoint = if (isAlbum) "albums" else "playlists"
+        val request: Request = Request.Builder()
+            .url("https://api.spotify.com/v1/$endpoint/${id}")
+            .addHeader("Authorization", "Bearer $mAccessToken")
+            .build()
+
+        mCall = mOkHttpClient.newCall(request)
+        ongoingRequestsCount++
+
+        mCall?.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.d("WebAPI","Failed to fetch data: $e")
+                ongoingRequestsCount--
+            }
+
+            @Throws(IOException::class)
+            override fun onResponse(call: Call, response: Response) {
+                try {
+                    val jsonObject = JSONObject(response.body!!.string())
+                    val name = jsonObject.getString("name")
+                    nameFlow.value = name
+                } catch (e: JSONException) {
+                    Log.d("WebAPI","Failed to parse data: $e")
+                }
+                ongoingRequestsCount--
+            }
+        })
+        return nameFlow
     }
 }
