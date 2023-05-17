@@ -88,6 +88,7 @@ class PacetifyService : Service(), SensorEventListener {
     private val WALKING_THRESHOLD = 70 // lowest bpm that is considered to be walking
     private var runningThreshold = RUNNING_THRESHOLD // lowest non-resting bpm for current mode
 
+    private var songSkipThreshold: Int = 4
     private val MOTIVATE_ADDITION = 3 // bpm to add if user wants to be motivated
     private val SONG_MINIMAL_SECONDS = 15 // lowest amount of seconds to be played from a song before skipping
     private val INITIAL_CADENCE = 150 // the bpm of the first played song
@@ -397,25 +398,27 @@ class PacetifyService : Service(), SensorEventListener {
 
         else if (isRunning() && currentlyResting) onStartedRunning()
 
-        else if (isRunning() && currentCadence > runningThreshold
-            && timePlayedFromSong > SONG_MINIMAL_SECONDS
-            && currentSong != null && (abs(cadence - currentSong!!.bpm) > 4))
-            skipSong()
+        else {
+            if (isRunning() && currentCadence > runningThreshold
+                && timePlayedFromSong > SONG_MINIMAL_SECONDS
+                && currentSong != null && (abs(cadence - currentSong!!.bpm) > songSkipThreshold))
+                skipSong()
 
-        else if (timeToSongEnd <= 10) {
-            // Here we are at the end of the song, so if the user has crossfade enabled in their app,
-            // I simply queue the next song and let Spotify handle the crossfade. Otherwise, I do
-            // the fake crossfade.
-            if (isCrossfadeEnabled) findNextSong(queue = true)
-            else skipSong()
-        }
+            else if (timeToSongEnd <= 10) {
+                // Here we are at the end of the song, so if the user has crossfade enabled in their app,
+                // I simply queue the next song and let Spotify handle the crossfade. Otherwise, I do
+                // the fake crossfade.
+                if (isCrossfadeEnabled) findNextSong(queue = true)
+                else skipSong()
+            }
 
-        else if (currentRestingTime < 0) { // resting over
-            Log.d("PacetifyService", "resting over!")
-            skipSong()
-            currentlyResting = false
-            wasResting = true
-            currentRestingTime = restTime
+            else if (currentRestingTime < 0) { // resting over
+                Log.d("PacetifyService", "resting over!")
+                skipSong()
+                currentlyResting = false
+                wasResting = true
+                currentRestingTime = restTime
+            }
         }
 
         updateInfoFlow()
@@ -565,6 +568,7 @@ class PacetifyService : Service(), SensorEventListener {
             motivate = settingsFile!!.motivate
             rest = settingsFile!!.rest
             restTime = settingsFile!!.restTime
+            songSkipThreshold = settingsFile!!.balance + 3
             currentRestingTime = if (rest) restTime else 0
             runningThreshold = if (settingsFile!!.walkingMode) WALKING_THRESHOLD else RUNNING_THRESHOLD
         }

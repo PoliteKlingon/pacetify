@@ -6,7 +6,7 @@ import com.xloun.pacetify.R
 /**
  * This is a singleton class for the settings preference file manipulation.
  * The file stores the settings entered by the user - application mode, motivate option, rest
- * option, restTime, theme and background addition preference.
+ * option, maximal rest time, matching balance, theme and background addition preference.
  *
  * Copyright (c) 2023 Jiří Loun
  * All rights reserved.
@@ -57,6 +57,13 @@ class SettingsPreferenceFile(
         get() = sharedPref.getInt("time", 60)
         set(time) {
             prefEditor.putInt("time", time)
+            prefEditor.apply()
+        }
+
+    var balance: Int
+        get() = sharedPref.getInt("balance", 2)
+        set(progress) {
+            prefEditor.putInt("balance", progress)
             prefEditor.apply()
         }
 

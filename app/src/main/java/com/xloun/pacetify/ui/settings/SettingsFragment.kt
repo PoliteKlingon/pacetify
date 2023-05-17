@@ -108,6 +108,17 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(p0: SeekBar?) {}
         })
 
+        binding.sbBalance.progress = settingsFile.balance
+        binding.sbBalance.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener{
+            override fun onProgressChanged(seekbar: SeekBar?, progress: Int, fromUser: Boolean) {
+                settingsFile.balance = progress
+                mainActivity.notifyServiceSettings()
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {}
+            override fun onStopTrackingTouch(p0: SeekBar?) {}
+        })
+
         val theme = SettingsPreferenceFile.getInstance(mainActivity).theme
         // check the current theme
         binding.rgTheme.check(
